@@ -74,8 +74,9 @@ export class Runtime {
       this.device.onState(() => this.publish()),
       this.obs.onState(() => this.publish()),
     );
+    const rendered = this.getSnapshot().renderedPage;
+    await this.device.setPage(Object.values(rendered.slots));
     await this.device.start();
-    await this.pushPage();
     this.publish();
   }
 

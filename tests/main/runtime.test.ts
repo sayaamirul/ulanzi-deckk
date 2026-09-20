@@ -22,17 +22,21 @@ const streamProfileFixture: Profile = {
 class FakeDevice {
   state: DeviceRuntimeState = { status: 'connected' };
   readonly pageCalls: unknown[][] = [];
+  readonly calls: Array<{ method: string; slots?: unknown[] }> = [];
   private buttonListener?: (event: { index: number; pressed: boolean }) => void;
   private stateListener?: (state: DeviceRuntimeState) => void;
 
-  async start(): Promise<void> {}
+  async start(): Promise<void> { this.calls.push({ method: 'start' }); }
   async stop(): Promise<void> {}
   getState(): DeviceRuntimeState { return this.state; }
   onButton(listener: (event: { index: number; pressed: boolean }) => void): () => void { this.buttonListener = listener; return () => undefined; }
   onState(listener: (state: DeviceRuntimeState) => void): () => void { this.stateListener = listener; return () => undefined; }
-  async setPage(slots: unknown[]): Promise<void> { this.pageCalls.push(slots); }
+  async setPage(slots: unknown[]): Promise<void> {
+    this.pageCalls.push(slots);
+    this.calls.push({ method: 'setPage', slots });
+  }
   async updateSlots(slots: unknown[]): Promise<void> { this.pageCalls.push(slots); }
-  async setBrightness(): Promise<void> {}
+  async setBrightness(): Promise<void> { throw new Error('D200H HID brightness is not verified'); }
   emitButton(index: number, pressed: boolean): void { this.buttonListener?.({ index, pressed }); }
   emitState(state: DeviceRuntimeState): void { this.state = state; this.stateListener?.(state); }
 }
@@ -70,6 +74,18 @@ const createRuntimeWithFakes = (profile: Profile) => {
 };
 
 describe('runtime', () => {
+  it('supplies the initial page before starting device discovery', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+
+    await runtime.start();
+
+    expect(fakes.device.calls.slice(0, 2)).toEqual([
+      { method: 'setPage', slots: expect.any(Array) },
+      { method: 'start' },
+    ]);
+    expect(fakes.device.pageCalls).toHaveLength(1);
+  });
+
   it('routes a fake device press through the active profile to OBS', async () => {
     const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
     await runtime.start();
@@ -84,6 +100,12 @@ describe('runtime', () => {
 
     await expect(runtime.saveProfile({ version: 1 })).rejects.toThrow();
     expect(runtime.getSnapshot().profile.name).toBe('Stream Control');
+  });
+
+  it('propagates the unsupported D200H brightness error to the caller', async () => {
+    const { runtime } = createRuntimeWithFakes(streamProfileFixture);
+
+    await expect(runtime.setBrightness(80)).rejects.toThrow('D200H HID brightness is not verified');
   });
 
   it('publishes updated state snapshots', async () => {

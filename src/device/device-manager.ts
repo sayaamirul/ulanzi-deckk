@@ -31,7 +31,7 @@ export class DeviceManager {
   private readonly stateListeners = new Set<StateListener>();
   private readonly buttonListeners = new Set<ButtonListener>();
   private readonly reconnect: boolean;
-  private readonly initialSlots: RenderedSlot[];
+  private slots: RenderedSlot[];
   private readonly retryDelaysMs: number[];
   private attempt = 0;
   private timer?: NodeJS.Timeout;
@@ -40,7 +40,7 @@ export class DeviceManager {
 
   constructor(private readonly factory: DeviceFactory, options: DeviceManagerOptions = {}) {
     this.reconnect = options.reconnect ?? true;
-    this.initialSlots = options.initialSlots ?? [];
+    this.slots = options.initialSlots ?? [];
     this.retryDelaysMs = options.retryDelaysMs ?? [1000, 2000, 4000, 8000, 15000];
   }
 
@@ -74,10 +74,12 @@ export class DeviceManager {
   }
 
   async setPage(slots: RenderedSlot[]): Promise<void> {
+    this.slots = slots;
     await this.device?.setPage(slots);
   }
 
   async updateSlots(slots: RenderedSlot[]): Promise<void> {
+    this.slots = slots;
     await this.device?.updateSlots(slots);
   }
 
@@ -98,18 +100,41 @@ export class DeviceManager {
       }
 
       const transport = await this.factory.open(descriptor);
-      const device = new D200HDevice(transport, this.initialSlots);
+      const device = new D200HDevice(transport, this.slots);
+      this.device = device;
       device.onButton((event: ButtonEvent) => {
         for (const listener of this.buttonListeners) listener(event);
       });
+      device.onFailure((error) => { void this.handleDeviceFailure(device, error); });
+      if (!this.started) {
+        await device.disconnect();
+        if (this.device === device) this.device = undefined;
+        return;
+      }
       await device.connect();
-      this.device = device;
+      if (!this.started || this.device !== device) {
+        await device.disconnect();
+        return;
+      }
       this.attempt = 0;
       this.setState({ status: 'connected' });
     } catch (error) {
+      const failedDevice = this.device;
+      this.device = undefined;
+      await failedDevice?.disconnect();
+      if (!this.started) return;
       this.setState({ status: 'error', message: error instanceof Error ? error.message : String(error) });
       this.scheduleReconnect();
     }
+  }
+
+  private async handleDeviceFailure(device: D200HDevice, error: Error): Promise<void> {
+    if (this.device !== device) return;
+    this.device = undefined;
+    await device.disconnect();
+    if (!this.started) return;
+    this.setState({ status: 'error', message: error.message });
+    this.scheduleReconnect();
   }
 
   private scheduleReconnect(): void {

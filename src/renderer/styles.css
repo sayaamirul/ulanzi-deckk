@@ -207,6 +207,18 @@ button:disabled {
   padding: 9px 14px;
 }
 
+.ui-input.ui-input--choice {
+  accent-color: var(--color-accent-strong);
+  appearance: auto;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  min-height: auto;
+  padding: 0;
+  width: auto;
+}
+
 .ui-control--accent {
   border-color: var(--color-accent);
 }

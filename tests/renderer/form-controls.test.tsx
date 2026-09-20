@@ -56,4 +56,10 @@ describe('form controls', () => {
     await user.click(screen.getByRole('option', { name: 'Studio' }));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ target: expect.objectContaining({ value: 'two' }) }));
   });
+
+  it('keeps radio and checkbox inputs compact when using the shared input', () => {
+    render(<FormInput type="radio" aria-label="Light" />);
+
+    expect(screen.getByRole('radio', { name: 'Light' })).toHaveClass('ui-input', 'ui-input--choice');
+  });
 });

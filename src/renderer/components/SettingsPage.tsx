@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { ThemePreference } from '../theme';
 import { FormButton } from './ui/FormButton';
+import { FormInput } from './ui/FormInput';
 
 type Props = {
   theme: ThemePreference;
@@ -46,7 +47,7 @@ export const SettingsPage = ({ theme, saveError, onThemeChange, onBack }: Props)
           <legend className="sr-only">Theme</legend>
           {themeOptions.map((option) => (
             <label className={`theme-option${theme === option.value ? ' is-selected' : ''}`} key={option.value}>
-              <input
+              <FormInput
                 type="radio"
                 name="theme"
                 value={option.value}

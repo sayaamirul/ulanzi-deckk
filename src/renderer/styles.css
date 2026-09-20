@@ -298,7 +298,7 @@ button:disabled {
 .workspace-sidebar {
   align-self: stretch;
   display: grid;
-  gap: 12px;
+  gap: 0;
   max-height: none;
   min-height: 0;
   min-width: 0;

@@ -35,5 +35,8 @@ describe('renderer theme styles', () => {
     expect(styles).not.toContain('border-radius: 10px');
     expect(styles).not.toContain('border-radius: 8px');
     expect(styles).not.toContain('border-radius: 999px');
+
+    const sidebarStyles = styles.match(/\.workspace-sidebar \{[^}]*\}/)?.[0] ?? '';
+    expect(sidebarStyles).toContain('gap: 0;');
   });
 });

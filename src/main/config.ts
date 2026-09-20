@@ -2,6 +2,8 @@ import { join } from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { ProfileStore } from '../domain/profile/store';
 import type { Profile } from '../domain/profile/types';
+import { FilePreferencesStore } from './preferences';
+import type { PreferencesStore } from './preferences';
 
 export type RuntimeProfileStore = {
   save(profile: Profile): Promise<void>;
@@ -11,6 +13,8 @@ export const profileDirectory = (): string => join(
   process.env.XDG_CONFIG_HOME || join(process.env.HOME || process.cwd(), '.config'),
   'ulanzi-obs',
 );
+
+export const preferencesPath = (): string => join(profileDirectory(), 'preferences.json');
 
 export const createDefaultProfile = (): Profile => ({
   version: 1,
@@ -49,4 +53,9 @@ export const createFileProfileStore = async (): Promise<RuntimeProfileStore> => 
   return {
     save: (profile) => store.save(join(directory, `${profile.id}.json`), profile),
   };
+};
+
+export const createFilePreferencesStore = async (): Promise<PreferencesStore> => {
+  await mkdir(profileDirectory(), { recursive: true });
+  return new FilePreferencesStore(preferencesPath());
 };

@@ -325,6 +325,39 @@ describe('profile editor', () => {
     }));
   });
 
+  it('restores focus to the edit trigger when the dialog closes', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /edit apps/i }));
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByRole('button', { name: /edit apps/i })).toHaveFocus();
+  });
+
+  it('keeps dialog focus when a profile snapshot updates', async () => {
+    const user = userEvent.setup();
+    let publishSnapshot: ((snapshot: AppSnapshot) => void) | undefined;
+    const captureSnapshotListener = (listener: (snapshot: AppSnapshot) => void) => {
+      publishSnapshot = listener;
+      return () => undefined;
+    };
+    api.onSnapshot.mockImplementation(captureSnapshotListener as typeof api.onSnapshot);
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Add' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Page Groups' }));
+    await user.type(screen.getByLabelText('Page group name'), 'Example');
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+
+    await act(async () => { publishSnapshot?.({ ...folderSnapshotFixture }); });
+
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+  });
+
   it('assigns a folder-open action from the folder selector', async () => {
     const user = userEvent.setup();
     api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);

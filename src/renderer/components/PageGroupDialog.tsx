@@ -20,9 +20,9 @@ export const PageGroupDialog = ({ mode, initialName = '', returnFocusRef, onClos
   );
 
   useEffect(() => {
-    inputRef.current?.focus();
     const dialog = dialogRef.current;
     const previousFocus = returnFocusRef?.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : undefined);
+    inputRef.current?.focus();
     const focusable = () => dialog
       ? Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]'))
       : [];

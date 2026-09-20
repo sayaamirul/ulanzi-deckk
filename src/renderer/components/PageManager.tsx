@@ -11,14 +11,14 @@ type Props = {
   activePageId: string;
   onSaveProfile: (profile: Profile) => Promise<void>;
   onSelectPage: (pageId: string) => void;
-  onEditPageGroup: (pageId: string) => void;
+  onEditPageGroup: (pageId: string, trigger: HTMLElement) => void;
 };
 
 type FolderRowProps = {
   folder: Page;
   links: Array<{ pageId: string; slotId: string }>;
   onOpen: (pageId: string) => void;
-  onEdit: (pageId: string) => void;
+  onEdit: (pageId: string, trigger: HTMLElement) => void;
   onDelete: (pageId: string) => void;
 };
 
@@ -57,7 +57,7 @@ const FolderRow = ({ folder, links, onOpen, onEdit, onDelete }: FolderRowProps) 
         <button className="icon-button" type="button" aria-label={`Open ${folder.name}`} title={`Open ${folder.name}`} onClick={() => onOpen(folder.id)}>
           <OpenIcon />
         </button>
-        <button className="icon-button" type="button" aria-label={`Edit ${folder.name}`} title={`Edit ${folder.name}`} onClick={() => onEdit(folder.id)}>
+        <button className="icon-button" type="button" aria-label={`Edit ${folder.name}`} title={`Edit ${folder.name}`} onClick={(event) => onEdit(folder.id, event.currentTarget)}>
           <EditIcon />
         </button>
         <button

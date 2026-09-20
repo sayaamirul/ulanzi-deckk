@@ -91,6 +91,13 @@ const activeFolderSnapshotFixture: AppSnapshot = {
   },
 };
 
+const chooseSearchableOption = async (user: ReturnType<typeof userEvent.setup>, label: string, query: string, optionName: string = query) => {
+  const control = screen.getByRole('combobox', { name: label });
+  await user.click(control);
+  await user.type(control, query);
+  await user.click(screen.getByRole('option', { name: optionName }));
+};
+
 describe('profile editor', () => {
   afterEach(() => {
     cleanup();
@@ -387,10 +394,12 @@ describe('profile editor', () => {
     const editor = screen.getByRole('region', { name: 'Action editor' });
     expect(editor).toHaveTextContent('Edit action');
     expect(screen.getByRole('heading', { name: 'Edit action' })).toHaveClass('action-editor-title', 'is-editing');
-    expect(screen.getByRole('button', { name: 'Close' }).querySelector('.lucide-x')).toBeInTheDocument();
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(close.querySelector('.lucide-x')).toBeInTheDocument();
+    expect(close).toHaveClass('ui-control--danger');
     expect(screen.queryByText('Slot 0_0')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Action group')).toHaveValue('OBS');
-    expect(screen.getByLabelText('Action type')).toHaveValue('obs.stream.toggle');
+    expect(screen.getByRole('combobox', { name: 'Action group' })).toHaveValue('OBS');
+    expect(screen.getByRole('combobox', { name: 'Action type' })).toHaveValue('Toggle stream');
   });
 
   it('remounts the slot editor when the active page changes', async () => {
@@ -446,8 +455,8 @@ describe('profile editor', () => {
     await user.click(screen.getByRole('button', { name: /add action/i }));
     await user.clear(screen.getByLabelText('Button label'));
     await user.type(screen.getByLabelText('Button label'), 'Browser');
-    await user.selectOptions(screen.getByLabelText('Action group'), 'System');
-    await user.selectOptions(screen.getByLabelText('Action type'), 'system.open');
+    await chooseSearchableOption(user, 'Action group', 'system', 'System');
+    await chooseSearchableOption(user, 'Action type', 'open', 'Open URL/file');
     await user.type(screen.getByLabelText('URL or file'), 'https://example.com');
     await user.click(screen.getByRole('button', { name: /save action/i }));
 
@@ -478,8 +487,7 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: 'Key 1' }));
-    await user.selectOptions(screen.getByLabelText('Action group'), 'OBS');
-    await user.selectOptions(screen.getByLabelText('Action type'), 'obs.scene.set');
+    await chooseSearchableOption(user, 'Action type', 'scene', 'Switch scene');
     await user.type(screen.getByLabelText('Scene name'), 'Starting Soon');
     await user.click(screen.getByRole('button', { name: /save action/i }));
 
@@ -557,6 +565,7 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: 'Add' }));
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveClass('ui-control--accent');
     expect(screen.getByRole('menuitem', { name: 'Page Groups' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Page Groups' })).toHaveFocus();
     await user.keyboard('{Escape}');
@@ -657,10 +666,10 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: 'Key 2' }));
-    await user.selectOptions(screen.getByLabelText('Action group'), 'Page');
-    await user.selectOptions(screen.getByLabelText('Action type'), 'page.goto');
-    await user.selectOptions(screen.getByLabelText('Folder'), 'apps');
-    expect(screen.getByLabelText('Folder')).toHaveValue('apps');
+    await chooseSearchableOption(user, 'Action group', 'page', 'Page');
+    await chooseSearchableOption(user, 'Action type', 'folder', 'Open folder');
+    await chooseSearchableOption(user, 'Folder', 'apps', 'Apps');
+    expect(screen.getByRole('combobox', { name: 'Folder' })).toHaveValue('Apps');
     await user.click(screen.getByRole('button', { name: /save action/i }));
 
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
@@ -679,10 +688,10 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: 'Key 2' }));
-    await user.selectOptions(screen.getByLabelText('Action group'), 'Page');
-    await user.selectOptions(screen.getByLabelText('Action type'), 'page.goto');
+    await chooseSearchableOption(user, 'Action group', 'page', 'Page');
+    await chooseSearchableOption(user, 'Action type', 'folder', 'Open folder');
 
-    expect(screen.getByLabelText('Folder')).toHaveValue('apps');
+    expect(screen.getByRole('combobox', { name: 'Folder' })).toHaveValue('Apps');
   });
 
   it('opens an editor for an empty folder key and refreshes after deleting the open folder', async () => {
@@ -713,8 +722,8 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: 'Key 2' }));
-    await user.selectOptions(screen.getByLabelText('Action group'), 'Page');
-    await user.selectOptions(screen.getByLabelText('Action type'), 'page.back');
+    await chooseSearchableOption(user, 'Action group', 'page', 'Page');
+    await chooseSearchableOption(user, 'Action type', 'back', 'Back to parent');
     expect(screen.queryByLabelText('Folder')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /save action/i }));
 

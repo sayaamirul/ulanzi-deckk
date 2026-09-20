@@ -35,12 +35,13 @@ const FolderRow = ({ folder, links, onOpen, onEdit, onDelete }: FolderRowProps) 
         <FormButton className="icon-button" variant="icon" type="button" aria-label={`Open ${folder.name}`} title={`Open ${folder.name}`} onClick={() => onOpen(folder.id)}>
           <ExternalLink aria-hidden="true" />
         </FormButton>
-        <FormButton className="icon-button" variant="icon" type="button" aria-label={`Edit ${folder.name}`} title={`Edit ${folder.name}`} onClick={(event) => onEdit(folder.id, event.currentTarget)}>
+        <FormButton className="icon-button" variant="icon" color="accent" type="button" aria-label={`Edit ${folder.name}`} title={`Edit ${folder.name}`} onClick={(event) => onEdit(folder.id, event.currentTarget)}>
           <Pencil aria-hidden="true" />
         </FormButton>
         <FormButton
           className="icon-button"
           variant="icon"
+          color="danger"
           type="button"
           aria-label={`Delete ${folder.name}`}
           title={links.length > 0 ? `Linked from ${links.map((link) => `${link.pageId}/${link.slotId}`).join(', ')}` : `Delete ${folder.name}`}

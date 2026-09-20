@@ -75,7 +75,7 @@ export const PageGroupDialog = ({ mode, initialName = '', returnFocusRef, onClos
               <p className="eyebrow">PAGE GROUPS</p>
               <h2 id="page-group-dialog-title">{title}</h2>
             </div>
-            <FormButton className="icon-button" variant="icon" type="button" aria-label="Close dialog" title="Close" onClick={onClose}><X aria-hidden="true" /></FormButton>
+            <FormButton className="icon-button" variant="icon" color="danger" type="button" aria-label="Close dialog" title="Close" onClick={onClose}><X aria-hidden="true" /></FormButton>
           </div>
           <label>
             Page group name

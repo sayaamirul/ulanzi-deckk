@@ -120,11 +120,13 @@ button:disabled {
   border: 1px solid var(--color-control-border);
   border-radius: 4px;
   color: var(--color-text);
+  width: 100%;
 }
 
 .ui-select-searchable {
   min-width: 0;
   position: relative;
+  width: 100%;
 }
 
 .ui-select-search-field {
@@ -221,6 +223,7 @@ button:disabled {
 
 .ui-control--accent {
   border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .ui-control--danger {

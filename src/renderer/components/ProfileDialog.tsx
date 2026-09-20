@@ -76,7 +76,7 @@ export const ProfileDialog = ({ mode, initialName = '', error, returnFocusRef, o
               <h2 id="profile-dialog-title">{title}</h2>
               <p className="muted">{mode === 'create' ? 'Start with a fresh layout.' : 'Copy the current layout into a new profile.'}</p>
             </div>
-            <FormButton className="icon-button" variant="icon" type="button" aria-label="Close dialog" title="Close" onClick={closeDialog}><X aria-hidden="true" /></FormButton>
+            <FormButton className="icon-button" variant="icon" color="danger" type="button" aria-label="Close dialog" title="Close" onClick={closeDialog}><X aria-hidden="true" /></FormButton>
           </div>
           <label>
             Profile name

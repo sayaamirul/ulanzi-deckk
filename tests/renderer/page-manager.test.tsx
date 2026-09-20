@@ -35,9 +35,12 @@ describe('page manager', () => {
     render(<PageManager profile={profile} activePageId="main" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} onEditPageGroup={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: /open apps/i }).querySelector('.lucide-external-link')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /edit apps/i }).querySelector('.lucide-pencil')).toBeInTheDocument();
+    const editApps = screen.getByRole('button', { name: /edit apps/i });
+    expect(editApps.querySelector('.lucide-pencil')).toBeInTheDocument();
+    expect(editApps).toHaveClass('ui-control--accent');
     const apps = screen.getByRole('button', { name: /delete apps/i });
     expect(apps.querySelector('.lucide-trash-2')).toBeInTheDocument();
+    expect(apps).toHaveClass('ui-control--danger');
     expect(apps).toBeDisabled();
     expect(screen.getByText(/main\/0_0/i)).toBeInTheDocument();
     await user.click(apps);

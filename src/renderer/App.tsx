@@ -211,7 +211,7 @@ const App = () => {
             <div className="panel-heading-actions">
               <span className="panel-meta">13 programmable keys</span>
               <div ref={addMenuRef} className="page-group-add-menu">
-                <FormButton ref={pageGroupAddButtonRef} className="icon-button page-group-add-button" variant="icon" type="button" aria-label="Add" title="Add" aria-expanded={isAddMenuOpen} onClick={() => setIsAddMenuOpen((open) => !open)}><Plus aria-hidden="true" /></FormButton>
+                <FormButton ref={pageGroupAddButtonRef} className="icon-button page-group-add-button" variant="icon" color="accent" type="button" aria-label="Add" title="Add" aria-expanded={isAddMenuOpen} onClick={() => setIsAddMenuOpen((open) => !open)}><Plus aria-hidden="true" /></FormButton>
                 {isAddMenuOpen && (
                   <div
                     className="page-group-menu"

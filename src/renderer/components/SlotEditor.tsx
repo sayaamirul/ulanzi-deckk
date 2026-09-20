@@ -38,7 +38,7 @@ export const SlotEditor = ({ slot, slotId, folders, pageTargets, onSave, onCance
           {slot && <p className="eyebrow">EDIT ACTION</p>}
           <h2 className={slot ? 'action-editor-title is-editing' : 'action-editor-title'}>{slot ? 'Edit action' : isAdding ? 'Add action' : 'Empty key'}</h2>
         </div>
-        <FormButton className="icon-button" variant="icon" type="button" aria-label="Close" title="Close" onClick={onCancel}><X aria-hidden="true" /></FormButton>
+        <FormButton className="icon-button" variant="icon" color="danger" type="button" aria-label="Close" title="Close" onClick={onCancel}><X aria-hidden="true" /></FormButton>
       </div>
       {!isAdding || !draft ? (
         <div className="empty-action-card">

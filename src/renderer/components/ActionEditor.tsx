@@ -75,6 +75,7 @@ export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange 
       <label>
         Action group
         <FormSelect
+          searchable
           aria-label="Action group"
           value={actionGroup}
           onChange={(event) => {
@@ -89,6 +90,7 @@ export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange 
       <label>
         Action type
         <FormSelect
+          searchable
           aria-label="Action type"
           value={action.type}
           onChange={(event) => selectAction(event.target.value as Action['type'])}
@@ -127,7 +129,7 @@ export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange 
       {action.type === 'page.goto' && (
         <label>
           Folder
-          <FormSelect aria-label="Folder" value={action.pageId} onChange={(event) => update({ pageId: event.target.value })}>
+          <FormSelect searchable aria-label="Folder" value={action.pageId} onChange={(event) => update({ pageId: event.target.value })}>
             {folders.length === 0 && <option value="">No folders available</option>}
             {action.pageId && !pageTargets.some((page) => page.id === action.pageId) && <option value={action.pageId} disabled>Invalid page: {action.pageId}</option>}
             {action.pageId && pageTargets.some((page) => page.id === action.pageId) && !folders.some((folder) => folder.id === action.pageId) && (

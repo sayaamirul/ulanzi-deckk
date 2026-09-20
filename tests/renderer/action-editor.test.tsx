@@ -18,7 +18,10 @@ describe('action editor', () => {
     };
     render(<Harness />);
 
-    await user.selectOptions(screen.getByLabelText('Action type'), 'obs.scene.set');
+    const actionType = screen.getByRole('combobox', { name: 'Action type' });
+    await user.click(actionType);
+    await user.type(actionType, 'scene');
+    await user.click(screen.getByRole('option', { name: 'Switch scene' }));
 
     expect(screen.getByLabelText('Scene name')).toBeInTheDocument();
   });
@@ -31,15 +34,21 @@ describe('action editor', () => {
     };
     render(<Harness />);
 
-    expect(screen.getByLabelText('Action group')).toHaveValue('OBS');
-    expect(screen.getByLabelText('Action type')).toHaveValue('obs.stream.toggle');
-    expect(screen.getByRole('option', { name: 'Toggle stream' })).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'Open URL/file' })).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Action group' })).toHaveValue('OBS');
+    expect(screen.getByRole('combobox', { name: 'Action type' })).toHaveValue('Toggle stream');
 
-    await user.selectOptions(screen.getByLabelText('Action group'), 'System');
+    const actionGroup = screen.getByRole('combobox', { name: 'Action group' });
+    await user.click(actionGroup);
+    expect(screen.getByRole('option', { name: 'System' })).toBeInTheDocument();
+    await user.click(screen.getByRole('option', { name: 'System' }));
 
-    expect(screen.getByLabelText('Action type')).toHaveValue('system.launch');
+    expect(screen.getByRole('combobox', { name: 'Action group' })).toHaveValue('System');
+    expect(screen.getByRole('combobox', { name: 'Action type' })).toHaveValue('Launch app');
     expect(screen.getByLabelText('Executable')).toBeInTheDocument();
+
+    const actionType = screen.getByRole('combobox', { name: 'Action type' });
+    await user.click(actionType);
+    expect(screen.getByRole('option', { name: 'Launch app' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Toggle stream' })).not.toBeInTheDocument();
   });
 });

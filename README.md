@@ -8,7 +8,7 @@ The project is in active v1 development. The profile engine, D200H HID protocol 
 
 ## Features
 
-- 13-key D200H profile editor with pages.
+- 13-key D200H profile editor with pages and one-level shortcut folders.
 - OBS scene, source, stream, recording, replay-buffer, mute, and transition actions.
 - App launches, URLs/files, shortcuts, shell commands, and page navigation.
 - Device and OBS connection state with reconnect handling.
@@ -35,6 +35,10 @@ node scripts/list-d200h.mjs
 ## OBS setup
 
 Enable the OBS WebSocket server in OBS Studio. The app defaults to `ws://127.0.0.1:4455`; the password is configured through the app connection flow.
+
+## Shortcut folders
+
+Create a folder under the current top-level page in the **Page Groups** sidebar. Assign one slot to **Page · Open folder**, choose the folder, and save the profile. Open that folder on the D200H, configure its slots with shortcuts, and assign one slot to **Page · Back** to return to the parent page. Version one supports one folder level; a folder cannot contain another folder. A folder with active links cannot be deleted until those links are changed.
 
 ## Linux device permissions
 

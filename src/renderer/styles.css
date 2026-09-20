@@ -296,6 +296,7 @@ button:disabled {
 }
 
 .workspace-sidebar {
+  align-content: start;
   align-self: stretch;
   display: grid;
   gap: 0;

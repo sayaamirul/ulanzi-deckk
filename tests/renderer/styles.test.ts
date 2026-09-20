@@ -38,5 +38,6 @@ describe('renderer theme styles', () => {
 
     const sidebarStyles = styles.match(/\.workspace-sidebar \{[^}]*\}/)?.[0] ?? '';
     expect(sidebarStyles).toContain('gap: 0;');
+    expect(sidebarStyles).toContain('align-content: start;');
   });
 });

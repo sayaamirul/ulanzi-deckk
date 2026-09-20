@@ -57,7 +57,12 @@ class FakeObs {
 
 class FakeProfileCatalog {
   readonly profiles = new Map<string, Profile>();
+  readonly reservedIds = new Set<string>();
   readonly saves: Profile[] = [];
+
+  async listIds(): Promise<string[]> {
+    return [...new Set([...this.profiles.keys(), ...this.reservedIds])].sort();
+  }
 
   async list(): Promise<ProfileSummary[]> {
     return [...this.profiles.values()]
@@ -222,6 +227,17 @@ describe('runtime', () => {
     expect(duplicate.pages).toEqual(streamProfileFixture.pages);
     expect(duplicate.pages).not.toBe(streamProfileFixture.pages);
     expect(duplicate.pages[0].slots).not.toBe(streamProfileFixture.pages[0].slots);
+  });
+
+  it('does not reuse an id reserved by a malformed profile file', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+    fakes.profileCatalog.reservedIds.add('studio');
+    await runtime.start();
+
+    await runtime.createProfile({ name: 'Studio' });
+
+    expect(runtime.getSnapshot().activeProfileId).toBe('studio-2');
+    expect(fakes.profileCatalog.saves.at(-1)?.id).toBe('studio-2');
   });
 
   it('rejects invalid names and missing profile ids without replacing the current profile', async () => {

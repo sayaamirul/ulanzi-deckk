@@ -5,6 +5,8 @@ import type { Profile, ProfileSummary } from '../domain/profile/types';
 import { ProfileStore } from '../domain/profile/store';
 
 export type ProfileCatalogStore = {
+  /** Every safe profile filename, including files whose contents are invalid. */
+  listIds(): Promise<string[]>;
   list(): Promise<ProfileSummary[]>;
   load(id: string): Promise<Profile>;
   save(profile: Profile): Promise<void>;
@@ -27,16 +29,21 @@ export class FileProfileCatalogStore implements ProfileCatalogStore {
 
   public constructor(private readonly directory: string) {}
 
-  public async list(): Promise<ProfileSummary[]> {
+  public async listIds(): Promise<string[]> {
     await mkdir(this.directory, { recursive: true });
     const entries = await readdir(this.directory, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.json') && entry.name !== 'preferences.json')
+      .map((entry) => entry.name.slice(0, -'.json'.length))
+      .filter((id) => profileIdPattern.test(id))
+      .sort();
+  }
+
+  public async list(): Promise<ProfileSummary[]> {
     const summaries: ProfileSummary[] = [];
-    for (const entry of entries) {
-      if (!entry.isFile() || !entry.name.endsWith('.json') || entry.name === 'preferences.json') continue;
-      const id = entry.name.slice(0, -'.json'.length);
-      if (!profileIdPattern.test(id)) continue;
+    for (const id of await this.listIds()) {
       try {
-        const profile = parseProfile(JSON.parse(await readFile(join(this.directory, entry.name), 'utf8')));
+        const profile = parseProfile(JSON.parse(await readFile(join(this.directory, `${id}.json`), 'utf8')));
         if (profile.id !== id) continue;
         summaries.push({ id: profile.id, name: profile.name });
       } catch {

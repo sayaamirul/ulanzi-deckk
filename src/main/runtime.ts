@@ -160,7 +160,7 @@ export class Runtime {
     if (!name) throw new Error('Profile name is required');
 
     await this.refreshProfiles();
-    const id = createProfileId(name, this.profiles.map((profile) => profile.id));
+    const id = createProfileId(name, await this.profileStore.listIds());
     const source = input.duplicateFromId
       ? await this.profileStore.load(input.duplicateFromId)
       : createDefaultProfile();

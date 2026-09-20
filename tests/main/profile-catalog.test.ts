@@ -31,6 +31,17 @@ describe('profile catalog', () => {
     ]);
   });
 
+  it('reserves ids from malformed profile files so they cannot be overwritten', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ulanzi-profiles-'));
+    temporaryDirectories.push(directory);
+    await writeFile(join(directory, 'studio.json'), '{bad json', 'utf8');
+    await writeFile(join(directory, 'preferences.json'), JSON.stringify({ theme: 'dark' }), 'utf8');
+    const store = new FileProfileCatalogStore(directory);
+
+    await expect(store.listIds()).resolves.toEqual(['studio']);
+    await expect(store.list()).resolves.toEqual([]);
+  });
+
   it('loads and saves profiles by stable id', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'ulanzi-profiles-'));
     temporaryDirectories.push(directory);

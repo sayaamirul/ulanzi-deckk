@@ -5,6 +5,7 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 
 export type AppPreferences = {
   theme: ThemePreference;
+  activeProfileId?: string;
 };
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = { theme: 'system' };
@@ -15,11 +16,13 @@ export const normalizePreferences = (input: unknown): AppPreferences => {
   }
 
   const theme = (input as { theme?: unknown }).theme;
-  if (theme === 'light' || theme === 'dark' || theme === 'system') {
-    return { theme };
+  const normalizedTheme = theme === 'light' || theme === 'dark' || theme === 'system' ? theme : DEFAULT_APP_PREFERENCES.theme;
+  const activeProfileId = (input as { activeProfileId?: unknown }).activeProfileId;
+  const result: AppPreferences = { theme: normalizedTheme };
+  if (typeof activeProfileId === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(activeProfileId.trim())) {
+    result.activeProfileId = activeProfileId.trim();
   }
-
-  return { ...DEFAULT_APP_PREFERENCES };
+  return result;
 };
 
 const isMissingFileError = (error: unknown): boolean => (

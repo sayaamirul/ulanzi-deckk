@@ -4,6 +4,8 @@ import { ProfileStore } from '../domain/profile/store';
 import type { Profile } from '../domain/profile/types';
 import { FilePreferencesStore } from './preferences';
 import type { PreferencesStore } from './preferences';
+import { FileProfileCatalogStore } from './profile-catalog';
+import type { ProfileCatalogStore } from './profile-catalog';
 
 export type RuntimeProfileStore = {
   save(profile: Profile): Promise<void>;
@@ -36,7 +38,24 @@ export const createDefaultProfile = (): Profile => ({
   }],
 });
 
-export const loadInitialProfile = async (): Promise<Profile> => {
+export const loadInitialProfile = async (catalog?: ProfileCatalogStore, activeProfileId?: string): Promise<Profile> => {
+  if (catalog) {
+    if (activeProfileId) {
+      try {
+        return await catalog.load(activeProfileId);
+      } catch {
+        // Fall through to the legacy default profile below.
+      }
+    }
+    try {
+      return await catalog.load('stream-control');
+    } catch {
+      const profile = createDefaultProfile();
+      await catalog.save(profile);
+      return profile;
+    }
+  }
+
   const directory = profileDirectory();
   const path = join(directory, 'stream-control.json');
   try {
@@ -53,6 +72,12 @@ export const createFileProfileStore = async (): Promise<RuntimeProfileStore> => 
   return {
     save: (profile) => store.save(join(directory, `${profile.id}.json`), profile),
   };
+};
+
+export const createFileProfileCatalogStore = async (): Promise<ProfileCatalogStore> => {
+  const directory = profileDirectory();
+  await mkdir(directory, { recursive: true });
+  return new FileProfileCatalogStore(directory);
 };
 
 export const createFilePreferencesStore = async (): Promise<PreferencesStore> => {

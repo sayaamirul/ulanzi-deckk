@@ -19,6 +19,8 @@ describe('application preferences', () => {
     expect(normalizePreferences(undefined)).toEqual(DEFAULT_APP_PREFERENCES);
     expect(normalizePreferences({ theme: 'light' })).toEqual({ theme: 'light' });
     expect(normalizePreferences({ theme: 'unknown' })).toEqual(DEFAULT_APP_PREFERENCES);
+    expect(normalizePreferences({ theme: 'dark', activeProfileId: 'studio' })).toEqual({ theme: 'dark', activeProfileId: 'studio' });
+    expect(normalizePreferences({ theme: 'dark', activeProfileId: '  ' })).toEqual({ theme: 'dark' });
   });
 
   it('loads Auto when the preferences file does not exist', async () => {

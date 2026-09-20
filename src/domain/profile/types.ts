@@ -45,6 +45,11 @@ export type Profile = {
   activePageId: string;
 };
 
+export type ProfileSummary = {
+  id: string;
+  name: string;
+};
+
 export type RenderedSlot = {
   id: SlotId;
   visual: 'active' | 'inactive' | 'empty';

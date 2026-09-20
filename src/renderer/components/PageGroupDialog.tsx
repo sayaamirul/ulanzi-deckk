@@ -3,13 +3,15 @@ import { useEffect, useRef, useState } from 'react';
 type Props = {
   mode: 'create' | 'edit';
   initialName?: string;
+  returnFocusRef?: { current: HTMLElement | null };
   onClose: () => void;
   onSubmit: (name: string) => void;
 };
 
-export const PageGroupDialog = ({ mode, initialName = '', onClose, onSubmit }: Props) => {
+export const PageGroupDialog = ({ mode, initialName = '', returnFocusRef, onClose, onSubmit }: Props) => {
   const [name, setName] = useState(initialName);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const title = mode === 'create' ? 'Add Page Group' : 'Edit Page Group';
   const CloseIcon = () => (
     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -19,16 +21,49 @@ export const PageGroupDialog = ({ mode, initialName = '', onClose, onSubmit }: P
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
+    const dialog = dialogRef.current;
+    const previousFocus = returnFocusRef?.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : undefined);
+    const focusable = () => dialog
+      ? Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]'))
+      : [];
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const elements = focusable();
+      if (elements.length === 0) return;
+      const first = elements[0]!;
+      const last = elements[elements.length - 1]!;
+      const active = document.activeElement;
+      if (!dialog?.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [onClose, returnFocusRef]);
 
   return (
     <div className="page-group-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section
         className="page-group-dialog"
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="page-group-dialog-title"
-        onKeyDown={(event) => { if (event.key === 'Escape') onClose(); }}
       >
         <form
           className="page-group-dialog-content"

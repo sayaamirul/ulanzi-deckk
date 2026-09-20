@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Slot, SlotId } from '../domain/profile/types';
 import { createFolderPage, folderPages, isFolderPage, topLevelPages } from '../domain/profile/navigation';
 import type { Profile } from '../domain/profile/types';
@@ -22,6 +22,22 @@ const App = () => {
   const [selectedSlotId, setSelectedSlotId] = useState<SlotId>();
   const [pageGroupDialog, setPageGroupDialog] = useState<PageGroupDialogState>();
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const pageGroupAddButtonRef = useRef<HTMLButtonElement>(null);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+  const addMenuItemRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isAddMenuOpen) return undefined;
+    addMenuItemRef.current?.focus();
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!addMenuRef.current?.contains(event.target as Node)) {
+        setIsAddMenuOpen(false);
+        pageGroupAddButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer);
+  }, [isAddMenuOpen]);
 
   useEffect(() => {
     let mounted = true;
@@ -94,11 +110,24 @@ const App = () => {
             </div>
             <div className="panel-heading-actions">
               <span className="panel-meta">13 programmable keys</span>
-              <div className="page-group-add-menu">
-                <button className="icon-button page-group-add-button" type="button" aria-label="Add" title="Add" aria-expanded={isAddMenuOpen} onClick={() => setIsAddMenuOpen((open) => !open)}>+</button>
+              <div ref={addMenuRef} className="page-group-add-menu">
+                <button ref={pageGroupAddButtonRef} className="icon-button page-group-add-button" type="button" aria-label="Add" title="Add" aria-expanded={isAddMenuOpen} onClick={() => setIsAddMenuOpen((open) => !open)}>+</button>
                 {isAddMenuOpen && (
-                  <div className="page-group-menu" role="menu">
-                    <button role="menuitem" type="button" onClick={() => { setPageGroupDialog({ mode: 'create' }); setIsAddMenuOpen(false); }}>Page Groups</button>
+                  <div
+                    className="page-group-menu"
+                    role="menu"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        setIsAddMenuOpen(false);
+                        pageGroupAddButtonRef.current?.focus();
+                      } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        addMenuItemRef.current?.focus();
+                      }
+                    }}
+                  >
+                    <button ref={addMenuItemRef} role="menuitem" type="button" onClick={() => { setPageGroupDialog({ mode: 'create' }); setIsAddMenuOpen(false); }}>Page Groups</button>
                   </div>
                 )}
               </div>
@@ -118,6 +147,7 @@ const App = () => {
         <PageGroupDialog
           mode={pageGroupDialog.mode}
           initialName={pageGroupDialog.mode === 'edit' ? snapshot.profile.pages.find((candidate) => candidate.id === pageGroupDialog.pageId)?.name : undefined}
+          returnFocusRef={pageGroupAddButtonRef}
           onClose={() => setPageGroupDialog(undefined)}
           onSubmit={(name) => { void savePageGroup(name); }}
         />

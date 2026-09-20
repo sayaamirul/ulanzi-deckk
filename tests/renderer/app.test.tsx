@@ -265,11 +265,29 @@ describe('profile editor', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Add' }));
     expect(screen.getByRole('menuitem', { name: 'Page Groups' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Page Groups' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menuitem', { name: 'Page Groups' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Add' }));
     await user.click(screen.getByRole('menuitem', { name: 'Page Groups' }));
 
     expect(screen.getByRole('dialog', { name: 'Add Page Group' })).toBeInTheDocument();
     expect(screen.getByLabelText('Page group name')).toBeInTheDocument();
     expect(screen.getByLabelText('Page group name')).toHaveFocus();
+    await user.type(screen.getByLabelText('Page group name'), 'Example');
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: /create page group/i })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Close dialog' })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByRole('button', { name: /create page group/i })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Add Page Group' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
   });
 
   it('creates a page group from the layout card dialog', async () => {

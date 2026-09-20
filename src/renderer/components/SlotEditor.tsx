@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Page, Slot, SlotId } from '../../domain/profile/types';
 import { ActionEditor } from './ActionEditor';
 
@@ -20,6 +20,10 @@ const emptySlot = (slotId: SlotId): Slot => ({
 export const SlotEditor = ({ slot, slotId, folders, pageTargets, onSave, onCancel }: Props) => {
   const [draft, setDraft] = useState<Slot | undefined>(slot);
   const [isAdding, setIsAdding] = useState(Boolean(slot));
+  const labelInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (isAdding && !slot) labelInputRef.current?.focus();
+  }, [isAdding, slot]);
   const update = (value: Partial<Slot>) => setDraft((current) => current ? ({ ...current, ...value }) : current);
   const pageTarget = draft?.action.type === 'page.goto' ? draft.action.pageId : undefined;
   const canSave = Boolean(draft) && (draft?.action.type !== 'page.goto' || pageTargets.some((page) => page.id === pageTarget));
@@ -44,7 +48,7 @@ export const SlotEditor = ({ slot, slotId, folders, pageTargets, onSave, onCance
         <>
           <label>
             Button label
-            <input aria-label="Button label" value={draft.label} onChange={(event) => update({ label: event.target.value })} />
+            <input ref={labelInputRef} aria-label="Button label" value={draft.label} onChange={(event) => update({ label: event.target.value })} />
           </label>
           <ActionEditor action={draft.action} folders={folders} pageTargets={pageTargets} onChange={(action) => update({ action })} />
           <div className="editor-actions">

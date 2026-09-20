@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppSnapshot } from '../../src/main/runtime';
@@ -107,6 +107,16 @@ describe('profile editor', () => {
     expect(screen.queryByLabelText('Action group')).not.toBeInTheDocument();
   });
 
+  it('moves focus to the label field after starting an empty action', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(screen.getByRole('button', { name: /add action/i }));
+
+    expect(screen.getByLabelText('Button label')).toHaveFocus();
+  });
+
   it('opens an assigned action directly in edit mode', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -116,6 +126,51 @@ describe('profile editor', () => {
     expect(screen.getByRole('region', { name: 'Slot editor' })).toHaveTextContent('Edit action');
     expect(screen.getByLabelText('Action group')).toHaveValue('OBS');
     expect(screen.getByLabelText('Action type')).toHaveValue('obs.stream.toggle');
+  });
+
+  it('remounts the slot editor when the active page changes', async () => {
+    const user = userEvent.setup();
+    let publishSnapshot: ((snapshot: AppSnapshot) => void) | undefined;
+    const captureSnapshotListener = (listener: (snapshot: AppSnapshot) => void) => {
+      publishSnapshot = listener;
+      return () => undefined;
+    };
+    api.onSnapshot.mockImplementation(captureSnapshotListener as typeof api.onSnapshot);
+    const secondPageSnapshot: AppSnapshot = {
+      ...streamSnapshotFixture,
+      activePageId: 'second',
+      profile: {
+        ...streamSnapshotFixture.profile,
+        activePageId: 'second',
+        pages: [
+          streamSnapshotFixture.profile.pages[0]!,
+          {
+            id: 'second',
+            name: 'Second',
+            slots: { '0_1': { id: '0_1', label: 'Second action', action: { type: 'obs.stream.toggle' } } },
+          },
+        ],
+      },
+      renderedPage: {
+        ...streamSnapshotFixture.renderedPage,
+        pageId: 'second',
+        slots: {
+          ...streamSnapshotFixture.renderedPage.slots,
+          '0_1': { ...streamSnapshotFixture.renderedPage.slots['0_1']!, label: 'Second action', visual: 'inactive' },
+        },
+      },
+    };
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(screen.getByRole('button', { name: /add action/i }));
+    await user.clear(screen.getByLabelText('Button label'));
+    await user.type(screen.getByLabelText('Button label'), 'Main draft');
+
+    await act(async () => { publishSnapshot?.(secondPageSnapshot); });
+
+    expect(screen.getByLabelText('Button label')).toHaveValue('Second action');
+    expect(screen.getByRole('heading', { name: 'Edit action' })).toBeInTheDocument();
   });
 
   it('adds an action from an empty card and saves it to the clicked key', async () => {

@@ -115,6 +115,20 @@ describe('profile editor', () => {
     expect(screen.queryByRole('heading', { name: 'Build your stream surface' })).not.toBeInTheDocument();
   });
 
+  it('keeps save beside the profile name and connection status inside the toolbar', async () => {
+    render(<App />);
+
+    const toolbar = await screen.findByRole('banner');
+    const status = within(toolbar).getByLabelText('Connection status');
+    const profileName = within(toolbar).getByLabelText('Profile name');
+    const save = within(toolbar).getByRole('button', { name: 'Save profile' });
+
+    expect(toolbar).toContainElement(status);
+    expect(toolbar).toContainElement(save);
+    expect(profileName.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByLabelText('Connection status')).toHaveLength(1);
+  });
+
   it('lists profiles and switches the active profile from the toolbar', async () => {
     const user = userEvent.setup();
     render(<App />);

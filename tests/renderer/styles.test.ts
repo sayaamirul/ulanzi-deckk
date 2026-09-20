@@ -15,6 +15,12 @@ describe('renderer theme styles', () => {
     expect(styles).toContain('--color-accent-contrast:');
     expect(styles).toContain('.settings-shell');
     expect(styles).toContain('.theme-option');
+    expect(styles).toContain('.workspace-shell {');
+    expect(styles).toContain('height: 100vh;');
+    expect(styles).toContain('min-height: 0;');
+    expect(styles).toContain('overflow: hidden;');
+    expect(styles).toContain('.workspace-body');
+    expect(styles).toContain('overflow: auto;');
     expect(styles).not.toContain('#7ee787');
   });
 });

@@ -2,8 +2,10 @@ import type { AppSnapshot } from '../../main/runtime';
 
 type Props = Pick<AppSnapshot, 'device' | 'obs'>;
 
-export const ConnectionStatus = ({ device, obs }: Props) => (
-  <div className="connection-status" aria-label="Connection status">
+type ConnectionStatusProps = Props & { className?: string };
+
+export const ConnectionStatus = ({ device, obs, className }: ConnectionStatusProps) => (
+  <div className={`connection-status${className ? ` ${className}` : ''}`} aria-label="Connection status">
     <span className={`status-pill ${device.status === 'connected' ? 'is-online' : ''}`}>
       Device: {device.status}
     </span>

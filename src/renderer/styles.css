@@ -66,11 +66,18 @@ body {
   background: var(--color-bg);
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   color: var(--color-text);
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow: hidden;
 }
 
 button,
@@ -109,7 +116,19 @@ button:disabled {
 
 .app-shell,
 .workspace-shell {
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-shell {
+  display: grid;
+  place-items: center;
+}
+
+.workspace-shell {
+  display: flex;
+  flex-direction: column;
 }
 
 .workspace-shell {
@@ -127,6 +146,68 @@ button:disabled {
   display: flex;
   gap: 20px;
   justify-content: space-between;
+}
+
+.profile-toolbar {
+  align-items: flex-end;
+  flex: 0 0 auto;
+}
+
+.profile-toolbar-main {
+  min-width: 0;
+}
+
+.profile-toolbar-main .eyebrow {
+  margin-bottom: 8px;
+}
+
+.profile-toolbar-fields,
+.profile-toolbar-fields label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.profile-toolbar-fields {
+  min-width: 0;
+}
+
+.profile-toolbar-fields select {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-control-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  max-width: 210px;
+  padding: 8px 10px;
+}
+
+.profile-toolbar-fields input {
+  min-width: 130px;
+  width: min(22vw, 260px);
+}
+
+.profile-actions-menu,
+.profile-menu {
+  position: relative;
+}
+
+.profile-menu {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  display: grid;
+  min-width: 170px;
+  padding: 5px;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 5;
+}
+
+.profile-menu button {
+  border: 0;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .toolbar-actions {
@@ -175,6 +256,11 @@ button:disabled {
   padding: 18px 0 28px;
 }
 
+.connection-status-compact {
+  gap: 8px;
+  padding: 0;
+}
+
 .status-pill {
   background: var(--color-status-surface);
   border: 1px solid var(--color-status-border);
@@ -191,19 +277,26 @@ button:disabled {
 
 .workspace-body {
   display: grid;
+  flex: 1 1 auto;
   gap: 24px;
   grid-template-columns: minmax(0, 1fr) 330px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.layout-panel {
+  min-height: 0;
+  overflow: auto;
 }
 
 .workspace-sidebar {
-  align-self: start;
+  align-self: stretch;
   display: grid;
   gap: 16px;
-  max-height: calc(100vh - 48px);
+  max-height: none;
+  min-height: 0;
   min-width: 0;
-  overflow-y: auto;
-  position: sticky;
-  top: 24px;
+  overflow: auto;
 }
 
 .layout-panel,
@@ -516,10 +609,88 @@ h1 {
   justify-content: flex-end;
 }
 
+.profile-dialog {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 16px;
+  color: var(--color-text);
+  max-width: calc(100vw - 32px);
+  width: 460px;
+}
+
+.profile-dialog-backdrop {
+  align-items: center;
+  background: rgb(7 9 13 / 72%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 10;
+}
+
+.profile-dialog-content {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+}
+
+.profile-dialog-heading {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.profile-dialog-heading h2 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.profile-dialog-heading .muted {
+  font-size: 0.9rem;
+  margin: 8px 0 0;
+}
+
+.profile-dialog-content label {
+  color: var(--color-text-muted);
+  display: grid;
+  font-size: 0.8rem;
+  gap: 7px;
+}
+
+.profile-dialog-content input {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-control-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  min-width: 0;
+  padding: 10px;
+}
+
+.profile-dialog-error,
+.profile-switch-error {
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface-muted));
+  border: 1px solid color-mix(in srgb, var(--color-danger) 55%, var(--color-border));
+  border-radius: 10px;
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.profile-dialog-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .settings-shell {
+  height: 100vh;
   margin: 0 auto;
   max-width: 960px;
-  min-height: 100vh;
+  min-height: 0;
+  overflow: hidden;
   padding: 48px 40px 64px;
 }
 

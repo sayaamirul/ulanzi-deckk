@@ -73,7 +73,7 @@ export const ProfileToolbar = ({
         </div>
       </div>
       <div className="toolbar-actions">
-        <ConnectionStatus device={device} obs={obs} />
+        <ConnectionStatus className="connection-status-compact" device={device} obs={obs} />
         <button type="button" onClick={onConnectObs}>Connect OBS</button>
         <button ref={settingsButtonRef} className={isSettingsOpen ? 'is-active' : undefined} type="button" aria-pressed={isSettingsOpen} onClick={onOpenSettings}>Settings</button>
       </div>

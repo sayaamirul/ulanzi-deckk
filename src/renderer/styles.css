@@ -112,8 +112,58 @@ body {
 
 .page-tabs {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 22px;
+}
+
+.page-manager {
+  border-top: 1px solid #292d39;
+  margin-top: 28px;
+  padding-top: 24px;
+}
+
+.page-manager-heading h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.folder-create,
+.folder-row {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.folder-create label {
+  color: #a7adbd;
+  display: grid;
+  flex: 1 1 220px;
+  gap: 7px;
+  font-size: 0.8rem;
+}
+
+.folder-create input,
+.folder-row input {
+  background: #10131a;
+  border: 1px solid #303646;
+  border-radius: 8px;
+  color: #f6f7fb;
+  min-width: 0;
+  padding: 10px;
+}
+
+.folder-row input {
+  flex: 1 1 150px;
+}
+
+.folder-warning {
+  color: #f4b183;
+  flex-basis: 100%;
+  font-size: 0.8rem;
 }
 
 button,

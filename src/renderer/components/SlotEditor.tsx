@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import type { Slot } from '../../domain/profile/types';
+import type { Page, Slot } from '../../domain/profile/types';
 import { ActionEditor } from './ActionEditor';
 
 type Props = {
   slot: Slot;
+  folders: Page[];
   onSave: (slot: Slot) => void;
   onCancel: () => void;
 };
 
-export const SlotEditor = ({ slot, onSave, onCancel }: Props) => {
+export const SlotEditor = ({ slot, folders, onSave, onCancel }: Props) => {
   const [draft, setDraft] = useState<Slot>(slot);
   const update = (value: Partial<Slot>) => setDraft((current) => ({ ...current, ...value }));
 
@@ -25,7 +26,7 @@ export const SlotEditor = ({ slot, onSave, onCancel }: Props) => {
         Button label
         <input aria-label="Button label" value={draft.label} onChange={(event) => update({ label: event.target.value })} />
       </label>
-      <ActionEditor action={draft.action} onChange={(action) => update({ action })} />
+      <ActionEditor action={draft.action} folders={folders} onChange={(action) => update({ action })} />
       <div className="editor-actions">
         <button className="primary-button" type="button" onClick={() => onSave(draft)}>Save slot</button>
         <button type="button" onClick={onCancel}>Cancel</button>

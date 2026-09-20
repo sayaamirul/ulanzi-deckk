@@ -46,11 +46,30 @@ const api = {
   setBrightness: vi.fn(async () => undefined),
 };
 
+const folderSnapshotFixture: AppSnapshot = {
+  ...streamSnapshotFixture,
+  profile: {
+    ...streamSnapshotFixture.profile,
+    pages: [
+      {
+        id: 'main',
+        name: 'Main',
+        slots: {
+          '0_0': { id: '0_0', label: 'Apps', action: { type: 'page.goto', pageId: 'apps' } },
+          '0_1': { id: '0_1', label: 'Empty', action: { type: 'obs.stream.toggle' } },
+        },
+      },
+      { id: 'apps', name: 'Apps', kind: 'folder', parentPageId: 'main', slots: {} },
+    ],
+  },
+};
+
 describe('profile editor', () => {
   afterEach(() => cleanup());
 
   beforeEach(() => {
     vi.clearAllMocks();
+    api.getSnapshot.mockResolvedValue(streamSnapshotFixture);
     Object.defineProperty(window, 'ulanzi', { configurable: true, value: api });
   });
 
@@ -97,5 +116,63 @@ describe('profile editor', () => {
     await user.click(screen.getByRole('button', { name: /save profile/i }));
 
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({ name: 'Live Show' }));
+  });
+
+  it('shows only normal pages in tabs and creates a folder under the active page', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Main' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apps' })).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Folder name'), 'Utilities');
+    await user.click(screen.getByRole('button', { name: /create folder/i }));
+
+    expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
+      pages: expect.arrayContaining([
+        expect.objectContaining({ name: 'Utilities', kind: 'folder', parentPageId: 'main' }),
+      ]),
+    }));
+  });
+
+  it('assigns a folder-open action from the folder selector', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.selectOptions(screen.getByLabelText('Action type'), 'page.goto');
+    await user.selectOptions(screen.getByLabelText('Folder'), 'apps');
+    await user.click(screen.getByRole('button', { name: /save slot/i }));
+
+    expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
+      pages: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'main',
+          slots: expect.objectContaining({ '0_1': expect.objectContaining({ action: { type: 'page.goto', pageId: 'apps' } }) }),
+        }),
+      ]),
+    }));
+  });
+
+  it('assigns a Back action without an extra field', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.selectOptions(screen.getByLabelText('Action type'), 'page.back');
+    expect(screen.queryByLabelText('Folder')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /save slot/i }));
+
+    expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
+      pages: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'main',
+          slots: expect.objectContaining({ '0_1': expect.objectContaining({ action: { type: 'page.back' } }) }),
+        }),
+      ]),
+    }));
   });
 });

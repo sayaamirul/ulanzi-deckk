@@ -246,6 +246,22 @@ button:focus-visible {
   align-self: start;
 }
 
+.empty-action-card {
+  border-top: 1px solid #292d39;
+  margin-top: 18px;
+  padding-top: 20px;
+}
+
+.empty-action-card h3 {
+  font-size: 1.1rem;
+  margin: 8px 0 0;
+}
+
+.empty-action-card .muted {
+  font-size: 0.9rem;
+  margin: 8px 0 18px;
+}
+
 .slot-editor label,
 .action-editor label {
   color: #a7adbd;

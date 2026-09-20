@@ -96,6 +96,53 @@ describe('profile editor', () => {
     expect(screen.queryByText('2_4')).not.toBeInTheDocument();
   });
 
+  it('opens an empty action card for an unassigned key', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+
+    expect(screen.getByRole('region', { name: 'Slot editor' })).toHaveTextContent('No action assigned');
+    expect(screen.getByRole('button', { name: /add action/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Action group')).not.toBeInTheDocument();
+  });
+
+  it('opens an assigned action directly in edit mode', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+
+    expect(screen.getByRole('region', { name: 'Slot editor' })).toHaveTextContent('Edit action');
+    expect(screen.getByLabelText('Action group')).toHaveValue('OBS');
+    expect(screen.getByLabelText('Action type')).toHaveValue('obs.stream.toggle');
+  });
+
+  it('adds an action from an empty card and saves it to the clicked key', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(screen.getByRole('button', { name: /add action/i }));
+    await user.clear(screen.getByLabelText('Button label'));
+    await user.type(screen.getByLabelText('Button label'), 'Browser');
+    await user.selectOptions(screen.getByLabelText('Action group'), 'System');
+    await user.selectOptions(screen.getByLabelText('Action type'), 'system.open');
+    await user.type(screen.getByLabelText('URL or file'), 'https://example.com');
+    await user.click(screen.getByRole('button', { name: /save slot/i }));
+
+    expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
+      pages: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'main',
+          slots: expect.objectContaining({
+            '0_1': expect.objectContaining({ label: 'Browser', action: { type: 'system.open', target: 'https://example.com' } }),
+          }),
+        }),
+      ]),
+    }));
+  });
+
   it('keeps slot and folder management together in the workspace sidebar', async () => {
     render(<App />);
 
@@ -111,6 +158,7 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    await user.selectOptions(screen.getByLabelText('Action group'), 'OBS');
     await user.selectOptions(screen.getByLabelText('Action type'), 'obs.scene.set');
     await user.type(screen.getByLabelText('Scene name'), 'Starting Soon');
     await user.click(screen.getByRole('button', { name: /save slot/i }));
@@ -168,6 +216,7 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.selectOptions(screen.getByLabelText('Action group'), 'Page');
     await user.selectOptions(screen.getByLabelText('Action type'), 'page.goto');
     await user.selectOptions(screen.getByLabelText('Folder'), 'apps');
     expect(screen.getByLabelText('Folder')).toHaveValue('apps');
@@ -189,6 +238,7 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.selectOptions(screen.getByLabelText('Action group'), 'Page');
     await user.selectOptions(screen.getByLabelText('Action type'), 'page.goto');
 
     expect(screen.getByLabelText('Folder')).toHaveValue('apps');
@@ -207,6 +257,7 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    await user.click(screen.getByRole('button', { name: /add action/i }));
     expect(screen.getByRole('button', { name: /save slot/i })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /cancel/i }));
     await user.click(screen.getByRole('button', { name: /delete apps/i }));
@@ -221,6 +272,7 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.selectOptions(screen.getByLabelText('Action group'), 'Page');
     await user.selectOptions(screen.getByLabelText('Action type'), 'page.back');
     expect(screen.queryByLabelText('Folder')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /save slot/i }));

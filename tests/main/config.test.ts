@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDefaultProfile, preferencesPath, profileDirectory } from '../../src/main/config';
+import { createDefaultProfile, preferencesPath, profileDirectory, repairActiveProfilePreference } from '../../src/main/config';
 
 describe('application config', () => {
   it('creates a streaming profile with the D200H reserved slot omitted', () => {
@@ -13,5 +13,16 @@ describe('application config', () => {
 
   it('stores app preferences alongside profiles', () => {
     expect(preferencesPath()).toBe(`${profileDirectory()}/preferences.json`);
+  });
+
+  it('repairs a missing active profile preference after fallback', async () => {
+    const saves: unknown[] = [];
+    await repairActiveProfilePreference(
+      { load: async () => ({ theme: 'dark' }), save: async (preferences) => { saves.push(preferences); } },
+      { theme: 'dark', activeProfileId: 'missing' },
+      createDefaultProfile(),
+    );
+
+    expect(saves).toEqual([{ theme: 'dark', activeProfileId: 'stream-control' }]);
   });
 });

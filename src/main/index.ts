@@ -6,7 +6,7 @@ import { ObsWebSocketClient } from '../actions/obs/client';
 import { LinuxSystemActionAdapter } from '../actions/system/adapter';
 import { DeviceManager } from '../device/device-manager';
 import { NodeHidTransport } from '../device/node-hid-transport';
-import { createFilePreferencesStore, createFileProfileStore, loadInitialProfile } from './config';
+import { createFilePreferencesStore, createFileProfileCatalogStore, loadInitialProfile } from './config';
 import { registerIpc } from './ipc';
 import { Runtime } from './runtime';
 import { createTray } from './tray';
@@ -40,9 +40,10 @@ let appTray: Tray | undefined;
 
 app.whenReady().then(async () => {
   const window = createWindow();
-  const profile = await loadInitialProfile();
-  const profileStore = await createFileProfileStore();
   const preferencesStore = await createFilePreferencesStore();
+  const preferences = await preferencesStore.load();
+  const profileStore = await createFileProfileCatalogStore();
+  const profile = await loadInitialProfile(profileStore, preferences.activeProfileId);
   const device = new DeviceManager({
     list: () => NodeHidTransport.list(),
     open: (descriptor) => NodeHidTransport.open(descriptor),
@@ -51,6 +52,7 @@ app.whenReady().then(async () => {
   const runtime = new Runtime({
     profile,
     profileStore,
+    preferencesStore,
     device,
     obs,
     executor: new ActionExecutor(obs, new LinuxSystemActionAdapter()),

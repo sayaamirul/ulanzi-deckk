@@ -8,6 +8,9 @@ const api: UlanziApi = {
     ipcRenderer.on('ulanzi:snapshot', handler);
     return () => ipcRenderer.removeListener('ulanzi:snapshot', handler);
   },
+  listProfiles: () => ipcRenderer.invoke('ulanzi:listProfiles'),
+  selectProfile: (profileId) => ipcRenderer.invoke('ulanzi:selectProfile', profileId),
+  createProfile: (input) => ipcRenderer.invoke('ulanzi:createProfile', input),
   saveProfile: (profile) => ipcRenderer.invoke('ulanzi:saveProfile', profile),
   selectPage: (pageId) => ipcRenderer.invoke('ulanzi:selectPage', pageId),
   dispatchSlot: (slotId) => ipcRenderer.invoke('ulanzi:dispatchSlot', slotId),

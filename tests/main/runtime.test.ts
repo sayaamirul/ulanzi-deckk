@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Action } from '../../src/domain/actions/types';
-import type { Profile } from '../../src/domain/profile/types';
+import type { Profile, ProfileSummary } from '../../src/domain/profile/types';
 import type { DeviceRuntimeState, ObsRuntimeState } from '../../src/domain/state/types';
 import { ActionExecutor } from '../../src/actions/executor';
 import { Runtime } from '../../src/main/runtime';
+import type { AppPreferences } from '../../src/main/preferences';
 
 const streamProfileFixture: Profile = {
   version: 1,
@@ -54,9 +55,46 @@ class FakeObs {
   emitState(state: ObsRuntimeState): void { this.state = state; this.stateListener?.(state); }
 }
 
+class FakeProfileCatalog {
+  readonly profiles = new Map<string, Profile>();
+  readonly saves: Profile[] = [];
+
+  async list(): Promise<ProfileSummary[]> {
+    return [...this.profiles.values()]
+      .map((profile) => ({ id: profile.id, name: profile.name }))
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }
+
+  async load(id: string): Promise<Profile> {
+    const profile = this.profiles.get(id);
+    if (!profile) throw new Error(`Profile not found: ${id}`);
+    return structuredClone(profile);
+  }
+
+  async save(profile: Profile): Promise<void> {
+    const copy = structuredClone(profile);
+    this.profiles.set(copy.id, copy);
+    this.saves.push(copy);
+  }
+}
+
+class FakePreferences {
+  value: AppPreferences = { theme: 'dark' };
+  readonly saves: AppPreferences[] = [];
+
+  async load(): Promise<AppPreferences> { return { ...this.value }; }
+  async save(value: AppPreferences): Promise<void> {
+    this.value = { ...value };
+    this.saves.push({ ...value });
+  }
+}
+
 const createRuntimeWithFakes = (profile: Profile) => {
   const device = new FakeDevice();
   const obs = new FakeObs();
+  const profileCatalog = new FakeProfileCatalog();
+  profileCatalog.profiles.set(profile.id, structuredClone(profile));
+  const preferences = new FakePreferences();
   const system = {
     launch: vi.fn(async () => undefined),
     open: vi.fn(async () => undefined),
@@ -65,12 +103,13 @@ const createRuntimeWithFakes = (profile: Profile) => {
   };
   const runtime = new Runtime({
     profile,
-    profileStore: { save: vi.fn(async () => undefined) },
+    profileStore: profileCatalog,
+    preferencesStore: preferences,
     device,
     obs,
     executor: new ActionExecutor(obs, system),
   });
-  return { runtime, fakes: { device, obs } };
+  return { runtime, fakes: { device, obs, profileCatalog, preferences } };
 };
 
 describe('runtime', () => {
@@ -84,6 +123,75 @@ describe('runtime', () => {
       { method: 'start' },
     ]);
     expect(fakes.device.pageCalls).toHaveLength(1);
+  });
+
+  it('includes the profile catalog and active profile in startup snapshots', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+    const secondProfile = { ...streamProfileFixture, id: 'studio', name: 'Studio' };
+    fakes.profileCatalog.profiles.set(secondProfile.id, secondProfile);
+
+    await runtime.start();
+
+    expect(runtime.getSnapshot().activeProfileId).toBe('stream-control');
+    expect(runtime.getSnapshot().profiles).toEqual([
+      { id: 'stream-control', name: 'Stream Control' },
+      { id: 'studio', name: 'Studio' },
+    ]);
+  });
+
+  it('switches profiles only after loading the target and persists the active id', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+    const studio: Profile = {
+      ...streamProfileFixture,
+      id: 'studio',
+      name: 'Studio',
+      activePageId: 'studio-page',
+      pages: [{ id: 'studio-page', name: 'Studio page', slots: {} }],
+    };
+    fakes.profileCatalog.profiles.set(studio.id, studio);
+    const snapshots: string[] = [];
+    runtime.onSnapshot((snapshot) => snapshots.push(snapshot.activeProfileId));
+    await runtime.start();
+
+    await runtime.selectProfile('studio');
+
+    expect(runtime.getSnapshot().profile).toEqual(studio);
+    expect(runtime.getSnapshot().activeProfileId).toBe('studio');
+    expect(runtime.getSnapshot().activePageId).toBe('studio-page');
+    expect(fakes.device.pageCalls).toHaveLength(2);
+    expect(fakes.preferences.value).toEqual({ theme: 'dark', activeProfileId: 'studio' });
+    expect(fakes.preferences.saves.at(-1)).toEqual({ theme: 'dark', activeProfileId: 'studio' });
+    expect(snapshots).toContain('studio');
+  });
+
+  it('creates fresh and duplicated profiles with isolated pages and slots', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+    await runtime.start();
+
+    await runtime.createProfile({ name: '  New Layout  ' });
+    const fresh = runtime.getSnapshot().profile;
+    expect(fresh.name).toBe('New Layout');
+    expect(fresh.id).toBe('new-layout');
+    expect(fakes.profileCatalog.saves.at(-1)?.id).toBe('new-layout');
+
+    await runtime.selectProfile('stream-control');
+    await runtime.createProfile({ name: 'Studio Copy', duplicateFromId: 'stream-control' });
+    const duplicate = runtime.getSnapshot().profile;
+    expect(duplicate.name).toBe('Studio Copy');
+    expect(duplicate.id).toBe('studio-copy');
+    expect(duplicate.pages).toEqual(streamProfileFixture.pages);
+    expect(duplicate.pages).not.toBe(streamProfileFixture.pages);
+    expect(duplicate.pages[0].slots).not.toBe(streamProfileFixture.pages[0].slots);
+  });
+
+  it('rejects invalid names and missing profile ids without replacing the current profile', async () => {
+    const { runtime } = createRuntimeWithFakes(streamProfileFixture);
+    await runtime.start();
+
+    await expect(runtime.createProfile({ name: '   ' })).rejects.toThrow(/name/i);
+    await expect(runtime.selectProfile('missing')).rejects.toThrow(/profile/i);
+    expect(runtime.getSnapshot().activeProfileId).toBe('stream-control');
+    expect(runtime.getSnapshot().profile.name).toBe('Stream Control');
   });
 
   it('routes a fake device press through the active profile to OBS', async () => {

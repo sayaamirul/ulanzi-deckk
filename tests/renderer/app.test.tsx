@@ -23,6 +23,8 @@ const streamSnapshotFixture: AppSnapshot = {
       '0_0': { id: '0_0', label: 'Stream', action: { type: 'obs.stream.toggle' } },
     }}],
   },
+  profiles: [{ id: 'stream-control', name: 'Stream Control' }],
+  activeProfileId: 'stream-control',
   activePageId: 'main',
   renderedPage: {
     pageId: 'main',
@@ -40,6 +42,9 @@ const streamSnapshotFixture: AppSnapshot = {
 const api = {
   getSnapshot: vi.fn(async () => streamSnapshotFixture),
   onSnapshot: vi.fn(() => () => undefined),
+  listProfiles: vi.fn(async () => streamSnapshotFixture.profiles),
+  selectProfile: vi.fn(async (_profileId: string) => undefined),
+  createProfile: vi.fn(async (_input: { name: string; duplicateFromId?: string }) => undefined),
   saveProfile: vi.fn(async (_profile: AppSnapshot['profile']) => undefined),
   selectPage: vi.fn(async () => undefined),
   dispatchSlot: vi.fn(async () => undefined),

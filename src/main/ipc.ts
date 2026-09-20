@@ -6,6 +6,9 @@ import type { AppPreferences, PreferencesStore } from './preferences';
 
 export const IPC_METHODS = [
   'getSnapshot',
+  'listProfiles',
+  'selectProfile',
+  'createProfile',
   'saveProfile',
   'selectPage',
   'dispatchSlot',
@@ -18,6 +21,9 @@ export const IPC_METHODS = [
 export type UlanziApi = {
   getSnapshot(): Promise<AppSnapshot>;
   onSnapshot(listener: (snapshot: AppSnapshot) => void): () => void;
+  listProfiles(): Promise<Array<{ id: string; name: string }>>;
+  selectProfile(profileId: string): Promise<void>;
+  createProfile(input: { name: string; duplicateFromId?: string }): Promise<void>;
   saveProfile(profile: Profile): Promise<void>;
   selectPage(pageId: string): Promise<void>;
   dispatchSlot(slotId: string): Promise<void>;
@@ -33,6 +39,9 @@ export const registerIpc = (
   preferencesStore: PreferencesStore,
 ): void => {
   ipc.handle('ulanzi:getSnapshot', () => runtime.getSnapshot());
+  ipc.handle('ulanzi:listProfiles', () => runtime.listProfiles());
+  ipc.handle('ulanzi:selectProfile', (_event, profileId: string) => runtime.selectProfile(profileId));
+  ipc.handle('ulanzi:createProfile', (_event, input: { name: string; duplicateFromId?: string }) => runtime.createProfile(input));
   ipc.handle('ulanzi:saveProfile', (_event, profile: Profile) => runtime.saveProfile(profile));
   ipc.handle('ulanzi:selectPage', (_event, pageId: string) => runtime.selectPage(pageId));
   ipc.handle('ulanzi:dispatchSlot', (_event, slotId: string) => runtime.dispatchSlot(slotId as never));

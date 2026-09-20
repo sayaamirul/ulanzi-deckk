@@ -5,6 +5,9 @@ describe('IPC contract', () => {
   it('exposes only the typed application methods', () => {
     expect(IPC_METHODS).toEqual([
       'getSnapshot',
+      'listProfiles',
+      'selectProfile',
+      'createProfile',
       'saveProfile',
       'selectPage',
       'dispatchSlot',

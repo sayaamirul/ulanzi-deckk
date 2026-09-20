@@ -7,7 +7,10 @@ import { ProfileEngine } from '../domain/profile/engine';
 import type { DeviceRuntimeState, ObsRuntimeState } from '../domain/state/types';
 import type { ObsSettings } from '../actions/obs/adapter';
 import type { ActionExecutor } from '../actions/executor';
-import type { RuntimeProfileStore } from './config';
+import { createDefaultProfile } from './config';
+import { createProfileId } from './profile-catalog';
+import type { ProfileCatalogStore } from './profile-catalog';
+import type { AppPreferences, PreferencesStore } from './preferences';
 
 export type RuntimeDevicePort = {
   start(): Promise<void>;
@@ -30,6 +33,8 @@ export type RuntimeObsPort = {
 
 export type AppSnapshot = {
   profile: Profile;
+  profiles: Array<{ id: string; name: string }>;
+  activeProfileId: string;
   activePageId: string;
   renderedPage: RenderedPage;
   device: DeviceRuntimeState;
@@ -37,9 +42,10 @@ export type AppSnapshot = {
   lastError?: { code: string; message: string };
 };
 
-type RuntimeDependencies = {
+export type RuntimeDependencies = {
   profile: Profile;
-  profileStore: RuntimeProfileStore;
+  profileStore: ProfileCatalogStore;
+  preferencesStore: PreferencesStore;
   device: RuntimeDevicePort;
   obs: RuntimeObsPort;
   executor: ActionExecutor;
@@ -49,8 +55,10 @@ type SnapshotListener = (snapshot: AppSnapshot) => void;
 
 export class Runtime {
   private profile: Profile;
+  private profiles: Array<{ id: string; name: string }> = [];
   private activePageId: string;
-  private readonly profileStore: RuntimeProfileStore;
+  private readonly profileStore: ProfileCatalogStore;
+  private readonly preferencesStore: PreferencesStore;
   private readonly device: RuntimeDevicePort;
   private readonly obs: RuntimeObsPort;
   private readonly executor: ActionExecutor;
@@ -63,6 +71,7 @@ export class Runtime {
     this.profile = dependencies.profile;
     this.activePageId = dependencies.profile.activePageId;
     this.profileStore = dependencies.profileStore;
+    this.preferencesStore = dependencies.preferencesStore;
     this.device = dependencies.device;
     this.obs = dependencies.obs;
     this.executor = dependencies.executor;
@@ -70,6 +79,7 @@ export class Runtime {
   }
 
   async start(): Promise<void> {
+    await this.refreshProfiles();
     this.unsubscribers.push(
       this.device.onButton((event) => { void this.handleButton(event); }),
       this.device.onState(() => this.publish()),
@@ -91,6 +101,8 @@ export class Runtime {
     const state = { obs: this.obs.getState(), device: this.device.getState() };
     return {
       profile: structuredClone(this.profile),
+      profiles: structuredClone(this.profiles),
+      activeProfileId: this.profile.id,
       activePageId: this.activePageId,
       renderedPage: this.engine.renderPage(this.profile, this.activePageId, state),
       device: state.device,
@@ -109,9 +121,46 @@ export class Runtime {
     await this.profileStore.save(profile);
     this.profile = profile;
     this.activePageId = profile.activePageId;
+    await this.refreshProfiles();
+    await this.persistActiveProfileId(profile.id);
     this.lastError = undefined;
     await this.pushPage();
     this.publish();
+  }
+
+  async listProfiles(): Promise<Array<{ id: string; name: string }>> {
+    await this.refreshProfiles();
+    return structuredClone(this.profiles);
+  }
+
+  async selectProfile(profileId: string): Promise<void> {
+    const nextProfile = await this.profileStore.load(profileId);
+    this.profile = structuredClone(nextProfile);
+    this.activePageId = nextProfile.activePageId;
+    await this.refreshProfiles();
+    await this.pushPage();
+    await this.persistActiveProfileId(nextProfile.id);
+    this.lastError = undefined;
+    this.publish();
+  }
+
+  async createProfile(input: { name: string; duplicateFromId?: string }): Promise<void> {
+    const name = input.name.trim();
+    if (!name) throw new Error('Profile name is required');
+
+    await this.refreshProfiles();
+    const id = createProfileId(name, this.profiles.map((profile) => profile.id));
+    const source = input.duplicateFromId
+      ? await this.profileStore.load(input.duplicateFromId)
+      : createDefaultProfile();
+    const profile: Profile = {
+      ...structuredClone(source),
+      id,
+      name,
+    };
+    await this.profileStore.save(profile);
+    await this.refreshProfiles();
+    await this.selectProfile(id);
   }
 
   async selectPage(pageId: string): Promise<void> {
@@ -180,6 +229,18 @@ export class Runtime {
   private async pushPage(): Promise<void> {
     const rendered = this.getSnapshot().renderedPage;
     await this.device.setPage(Object.values(rendered.slots));
+  }
+
+  private async refreshProfiles(): Promise<void> {
+    const profiles = await this.profileStore.list();
+    this.profiles = profiles
+      .map((profile) => ({ id: profile.id, name: profile.name }))
+      .sort((left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id));
+  }
+
+  private async persistActiveProfileId(activeProfileId: string): Promise<void> {
+    const preferences: AppPreferences = await this.preferencesStore.load();
+    await this.preferencesStore.save({ ...preferences, activeProfileId });
   }
 
   private publish(): void {

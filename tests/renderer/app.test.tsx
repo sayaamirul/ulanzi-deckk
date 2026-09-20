@@ -504,6 +504,13 @@ describe('profile editor', () => {
     expect(screen.getByRole('button', { name: /open apps/i })).toBeInTheDocument();
   });
 
+  it('styles the top-level Main page like a breadcrumb', async () => {
+    render(<App />);
+
+    const mainButton = await screen.findByRole('button', { name: 'Main' });
+    expect(mainButton).toHaveClass('page-tab--breadcrumb');
+  });
+
   it('removes the device layout helper copy', async () => {
     render(<App />);
 

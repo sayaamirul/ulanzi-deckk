@@ -484,6 +484,21 @@ button:disabled {
   font-weight: 800;
 }
 
+.page-tab--breadcrumb,
+.page-tab--breadcrumb.is-active {
+  background: transparent;
+  border: 0;
+  color: var(--color-accent);
+  font-weight: 700;
+  padding: 0;
+}
+
+.page-tab--breadcrumb:hover,
+.page-tab--breadcrumb:focus-visible {
+  border-color: transparent;
+  color: var(--color-accent-hover);
+}
+
 .device-grid {
   display: grid;
   gap: 8px;

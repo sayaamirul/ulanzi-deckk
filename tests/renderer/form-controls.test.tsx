@@ -46,6 +46,7 @@ describe('form controls', () => {
 
     const search = screen.getByRole('combobox', { name: 'Profile' });
     expect(search.closest('.ui-select-search-field')).toHaveAttribute('data-open', 'false');
+    expect(search.closest('.ui-select-searchable')).not.toHaveClass('ui-control--md');
     expect(search).toHaveClass('profile-select');
     expect(search).toHaveStyle({ maxWidth: '220px' });
     await user.click(search);

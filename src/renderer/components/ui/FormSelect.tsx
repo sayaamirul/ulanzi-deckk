@@ -49,7 +49,7 @@ const SearchableSelect = forwardRef<HTMLSelectElement, FormSelectProps>(function
   };
 
   return (
-    <div ref={wrapperRef} className={`ui-select-searchable ui-control--${size ?? 'md'} ui-control--${color ?? 'default'}`}>
+    <div ref={wrapperRef} className="ui-select-searchable">
       <div className="ui-select-search-field" data-open={isOpen}>
         <input
           id={props.id}

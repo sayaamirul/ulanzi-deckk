@@ -37,7 +37,7 @@ describe('renderer theme styles', () => {
     expect(styles).not.toContain('border-radius: 999px');
 
     const sidebarStyles = styles.match(/\.workspace-sidebar \{[^}]*\}/)?.[0] ?? '';
-    expect(sidebarStyles).toContain('gap: 0;');
+    expect(sidebarStyles).toContain('gap: 12px;');
     expect(sidebarStyles).toContain('align-content: start;');
   });
 });

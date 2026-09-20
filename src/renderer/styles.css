@@ -299,7 +299,7 @@ button:disabled {
   align-content: start;
   align-self: stretch;
   display: grid;
-  gap: 0;
+  gap: 12px;
   max-height: none;
   min-height: 0;
   min-width: 0;

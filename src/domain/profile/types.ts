@@ -32,6 +32,8 @@ export type Slot = {
 export type Page = {
   id: string;
   name: string;
+  kind?: 'normal' | 'folder';
+  parentPageId?: string;
   slots: Partial<Record<SlotId, Slot>>;
 };
 

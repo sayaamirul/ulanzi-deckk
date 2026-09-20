@@ -1,0 +1,15 @@
+appId: com.ulanzi.d200h.obs
+productName: Ulanzi D200H OBS
+directories:
+  output: dist
+files:
+  - out/**
+  - package.json
+extraResources:
+  - from: udev/99-ulanzi-d200h.rules
+    to: udev/99-ulanzi-d200h.rules
+linux:
+  target:
+    - AppImage
+  category: AudioVideo
+  artifactName: ${name}-${version}-${arch}.${ext}

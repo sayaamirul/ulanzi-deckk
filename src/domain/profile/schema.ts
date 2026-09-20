@@ -55,6 +55,8 @@ const slotSchema = z.object({
 const pageSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
+  kind: z.enum(['normal', 'folder']).default('normal'),
+  parentPageId: z.string().min(1).optional(),
   slots: z.record(z.string(), slotSchema).superRefine((slots, context) => {
     for (const [key, slot] of Object.entries(slots)) {
       if (!(CONFIGURABLE_SLOT_IDS as readonly string[]).includes(key)) {
@@ -80,6 +82,31 @@ const profileSchema = z.object({
   const pageIds = profile.pages.map((page) => page.id);
   if (new Set(pageIds).size !== pageIds.length) {
     context.addIssue({ code: 'custom', path: ['pages'], message: 'page ids must be unique' });
+  }
+
+  const pagesById = new Map(profile.pages.map((page) => [page.id, page]));
+  for (const [pageIndex, page] of profile.pages.entries()) {
+    const kind = page.kind ?? 'normal';
+    const parent = page.parentPageId ? pagesById.get(page.parentPageId) : undefined;
+    if (kind === 'folder' && !parent) {
+      context.addIssue({ code: 'custom', path: ['pages', pageIndex, 'parentPageId'], message: 'folder parent does not exist' });
+    }
+    if (kind === 'folder' && parent?.kind === 'folder') {
+      context.addIssue({ code: 'custom', path: ['pages', pageIndex, 'parentPageId'], message: 'folders cannot contain folders' });
+    }
+    if (kind === 'normal' && page.parentPageId) {
+      context.addIssue({ code: 'custom', path: ['pages', pageIndex, 'parentPageId'], message: 'normal pages cannot have a parent' });
+    }
+
+    for (const [slotId, slot] of Object.entries(page.slots)) {
+      if (slot?.action.type !== 'page.goto') continue;
+      const target = pagesById.get(slot.action.pageId);
+      if (!target) {
+        context.addIssue({ code: 'custom', path: ['pages', pageIndex, 'slots', slotId, 'action', 'pageId'], message: 'page navigation target does not exist' });
+      } else if (target.kind === 'folder' && target.parentPageId !== page.id) {
+        context.addIssue({ code: 'custom', path: ['pages', pageIndex, 'slots', slotId, 'action', 'pageId'], message: 'folder parent must match the source page' });
+      }
+    }
   }
 });
 

@@ -1,5 +1,6 @@
 import type { Action } from '../domain/actions/types';
 import { parseProfile } from '../domain/profile/schema';
+import { isFolderPage, topLevelPages } from '../domain/profile/navigation';
 import { CONFIGURABLE_SLOT_IDS } from '../domain/profile/types';
 import type { Profile, RenderedPage } from '../domain/profile/types';
 import { ProfileEngine } from '../domain/profile/engine';
@@ -152,12 +153,27 @@ export class Runtime {
   }
 
   private async navigate(action: Extract<Action, { type: `page.${string}` }>): Promise<void> {
+    const currentPage = this.profile.pages.find((page) => page.id === this.activePageId);
+    if (!currentPage) throw new Error(`Page not found: ${this.activePageId}`);
+
     if (action.type === 'page.goto') {
+      const targetPage = this.profile.pages.find((page) => page.id === action.pageId);
+      if (!targetPage) throw new Error(`Page not found: ${action.pageId}`);
+      if (isFolderPage(targetPage) && targetPage.parentPageId !== currentPage.id) {
+        throw new Error(`folder parent must match current page: ${currentPage.id}`);
+      }
       await this.selectPage(action.pageId);
       return;
     }
-    const currentIndex = this.profile.pages.findIndex((page) => page.id === this.activePageId);
-    const previousPage = this.profile.pages[Math.max(0, currentIndex - 1)];
+
+    if (isFolderPage(currentPage) && currentPage.parentPageId) {
+      await this.selectPage(currentPage.parentPageId);
+      return;
+    }
+
+    const pages = topLevelPages(this.profile);
+    const currentIndex = pages.findIndex((page) => page.id === this.activePageId);
+    const previousPage = pages[Math.max(0, currentIndex - 1)];
     if (previousPage) await this.selectPage(previousPage.id);
   }
 

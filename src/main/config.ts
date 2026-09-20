@@ -20,6 +20,7 @@ export const createDefaultProfile = (): Profile => ({
   pages: [{
     id: 'main',
     name: 'Main',
+    kind: 'normal',
     slots: {
       '0_0': { id: '0_0', label: 'Stream', action: { type: 'obs.stream.toggle' }, activeWhen: { kind: 'boolean', key: 'streaming', value: true } },
       '0_1': { id: '0_1', label: 'Record', action: { type: 'obs.record.toggle' }, activeWhen: { kind: 'boolean', key: 'recording', value: true } },

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Slot, SlotId } from '../domain/profile/types';
+import { folderPages, isFolderPage, topLevelPages } from '../domain/profile/navigation';
+import type { Profile } from '../domain/profile/types';
 import type { AppSnapshot } from '../main/runtime';
 import { ulanziApi } from './api';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { DeviceGrid } from './components/DeviceGrid';
 import { PageTabs } from './components/PageTabs';
 import { ProfileToolbar } from './components/ProfileToolbar';
+import { PageManager } from './components/PageManager';
 import { SlotEditor } from './components/SlotEditor';
 
 const App = () => {
@@ -21,7 +24,9 @@ const App = () => {
   }, [api]);
 
   const page = useMemo(() => snapshot?.profile.pages.find((candidate) => candidate.id === snapshot.activePageId), [snapshot]);
-  const selectedSlot = selectedSlotId && page?.slots[selectedSlotId];
+  const selectedSlot = selectedSlotId && page
+    ? page.slots[selectedSlotId] ?? { id: selectedSlotId, label: '', action: { type: 'obs.stream.toggle' as const } }
+    : undefined;
 
   if (!snapshot || !page) {
     return <main className="app-shell"><p className="muted">Loading profile…</p></main>;
@@ -42,8 +47,15 @@ const App = () => {
   };
 
   const renameProfile = (name: string) => setSnapshot({ ...snapshot, profile: { ...snapshot.profile, name } });
-  const saveProfile = async () => { await api.saveProfile(snapshot.profile); };
+  const saveProfile = async (profile: Profile = snapshot.profile) => {
+    await api.saveProfile(profile);
+    setSnapshot(await api.getSnapshot());
+  };
   const connectObs = async () => { await api.connectObs({ url: 'ws://127.0.0.1:4455' }); };
+  const parentPage = isFolderPage(page)
+    ? snapshot.profile.pages.find((candidate) => candidate.id === page.parentPageId)
+    : undefined;
+  const selectableFolders = !isFolderPage(page) ? folderPages(snapshot.profile, page.id) : [];
 
   return (
     <main className="workspace-shell">
@@ -63,11 +75,15 @@ const App = () => {
             </div>
             <span className="panel-meta">13 programmable keys</span>
           </div>
-          <PageTabs pages={snapshot.profile.pages} activePageId={snapshot.activePageId} onSelect={(id) => { void api.selectPage(id); }} />
+          <PageTabs pages={topLevelPages(snapshot.profile)} activePageId={snapshot.activePageId} onSelect={(id) => { void api.selectPage(id); }} />
+          {parentPage && <button type="button" onClick={() => { void api.selectPage(parentPage.id); }}>Back to {parentPage.name}</button>}
           <DeviceGrid page={snapshot.renderedPage} onSelect={openSlot} />
-          <p className="muted helper-text">Assign an OBS action to each key, then save the profile to push it to the D200H.</p>
+          <p className="muted helper-text">Assign an action to each key, then save the profile to push it to the D200H. Folder buttons open grouped shortcuts.</p>
         </section>
-        {selectedSlot && <SlotEditor slot={structuredClone(selectedSlot)} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
+        <aside className="workspace-sidebar" aria-label="Workspace sidebar">
+          {selectedSlot && <SlotEditor slot={structuredClone(selectedSlot)} folders={selectableFolders} pageTargets={snapshot.profile.pages} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
+          <PageManager profile={snapshot.profile} activePageId={snapshot.activePageId} onSaveProfile={saveProfile} onSelectPage={(id) => { void api.selectPage(id); }} />
+        </aside>
       </div>
     </main>
   );

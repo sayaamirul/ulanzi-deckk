@@ -6,6 +6,7 @@ describe('application config', () => {
     const profile = createDefaultProfile();
 
     expect(profile.id).toBe('stream-control');
+    expect(profile.pages[0]?.kind).toBe('normal');
     expect(profile.pages[0].slots['0_0']?.action).toEqual({ type: 'obs.stream.toggle' });
     expect(profile.pages[0].slots).not.toHaveProperty('2_4');
   });

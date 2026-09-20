@@ -1,7 +1,10 @@
 import type { Action } from '../../domain/actions/types';
+import type { Page } from '../../domain/profile/types';
 
 type Props = {
   action: Action;
+  folders?: Page[];
+  pageTargets?: Page[];
   onChange: (action: Action) => void;
 };
 
@@ -17,7 +20,7 @@ const actionOptions: Array<{ value: Action['type']; label: string }> = [
   { value: 'system.open', label: 'System · Open URL/file' },
   { value: 'system.shortcut', label: 'System · Keyboard shortcut' },
   { value: 'system.shell', label: 'System · Shell command' },
-  { value: 'page.goto', label: 'Page · Go to page' },
+  { value: 'page.goto', label: 'Page · Open folder' },
   { value: 'page.back', label: 'Page · Back' },
 ];
 
@@ -39,7 +42,7 @@ const defaultAction = (type: Action['type']): Action => {
   }
 };
 
-export const ActionEditor = ({ action, onChange }: Props) => {
+export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange }: Props) => {
   const update = (value: Partial<Action>) => onChange({ ...action, ...value } as Action);
 
   return (
@@ -49,7 +52,11 @@ export const ActionEditor = ({ action, onChange }: Props) => {
         <select
           aria-label="Action type"
           value={action.type}
-          onChange={(event) => onChange(defaultAction(event.target.value as Action['type']))}
+          onChange={(event) => {
+            const nextAction = defaultAction(event.target.value as Action['type']);
+            if (nextAction.type === 'page.goto' && folders[0]) nextAction.pageId = folders[0].id;
+            onChange(nextAction);
+          }}
         >
           {actionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
@@ -83,7 +90,17 @@ export const ActionEditor = ({ action, onChange }: Props) => {
         <label>Shell command<textarea aria-label="Shell command" value={action.command} onChange={(event) => update({ command: event.target.value })} /></label>
       )}
       {action.type === 'page.goto' && (
-        <label>Page ID<input aria-label="Page ID" value={action.pageId} onChange={(event) => update({ pageId: event.target.value })} /></label>
+        <label>
+          Folder
+          <select aria-label="Folder" value={action.pageId} onChange={(event) => update({ pageId: event.target.value })}>
+            {folders.length === 0 && <option value="">No folders available</option>}
+            {action.pageId && !pageTargets.some((page) => page.id === action.pageId) && <option value={action.pageId} disabled>Invalid page: {action.pageId}</option>}
+            {action.pageId && pageTargets.some((page) => page.id === action.pageId) && !folders.some((folder) => folder.id === action.pageId) && (
+              <option value={action.pageId}>{pageTargets.find((page) => page.id === action.pageId)?.name ?? action.pageId}</option>
+            )}
+            {folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
+          </select>
+        </label>
       )}
     </div>
   );

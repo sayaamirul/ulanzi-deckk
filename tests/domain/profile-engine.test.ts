@@ -61,4 +61,28 @@ describe('profile engine', () => {
 
     expect(page.slots['2_2'].visual).toBe('empty');
   });
+
+  it('renders folder slots with the same visual contract as normal slots', () => {
+    const folderProfile: Profile = {
+      ...profileFixture,
+      pages: [{
+        id: 'apps',
+        name: 'Apps',
+        kind: 'folder',
+        parentPageId: 'main',
+        slots: {
+          '0_0': { id: '0_0', label: 'Browser', action: { type: 'system.open', target: 'https://example.com' } },
+        },
+      }],
+      activePageId: 'apps',
+    };
+
+    const page = engine.renderPage(folderProfile, 'apps', {
+      obs: { connected: false, streaming: false, recording: false, replayBuffer: false, mutedInputs: {} },
+      device: { status: 'disconnected' },
+    });
+
+    expect(page.pageId).toBe('apps');
+    expect(page.slots['0_0']).toMatchObject({ visual: 'inactive', label: 'Browser' });
+  });
 });

@@ -4,10 +4,10 @@ import { createFolderPage, folderPages, isFolderPage, topLevelPages } from '../d
 import type { Profile } from '../domain/profile/types';
 import type { AppSnapshot } from '../main/runtime';
 import { ulanziApi } from './api';
-import { ConnectionStatus } from './components/ConnectionStatus';
 import { DeviceGrid } from './components/DeviceGrid';
 import { PageTabs } from './components/PageTabs';
 import { ProfileToolbar } from './components/ProfileToolbar';
+import { ProfileDialog } from './components/ProfileDialog';
 import { PageManager } from './components/PageManager';
 import { PageGroupDialog } from './components/PageGroupDialog';
 import { SettingsPage } from './components/SettingsPage';
@@ -19,6 +19,8 @@ type PageGroupDialogState =
   | { mode: 'create' }
   | { mode: 'edit'; pageId: string };
 
+type ProfileDialogState = { mode: 'create' | 'duplicate' };
+
 const App = () => {
   const api = ulanziApi();
   const [snapshot, setSnapshot] = useState<AppSnapshot>();
@@ -28,12 +30,16 @@ const App = () => {
   const [prefersDark, setPrefersDark] = useState(true);
   const [selectedSlotId, setSelectedSlotId] = useState<SlotId>();
   const [pageGroupDialog, setPageGroupDialog] = useState<PageGroupDialogState>();
+  const [profileDialog, setProfileDialog] = useState<ProfileDialogState>();
+  const [profileDialogError, setProfileDialogError] = useState<string>();
+  const [profileSwitchError, setProfileSwitchError] = useState<string>();
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const pageGroupAddButtonRef = useRef<HTMLButtonElement>(null);
   const pageGroupTriggerRef = useRef<HTMLElement>(null);
   const addMenuRef = useRef<HTMLDivElement>(null);
   const addMenuItemRef = useRef<HTMLButtonElement>(null);
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
+  const profileDialogTriggerRef = useRef<HTMLElement>(null);
   const userSelectedThemeRef = useRef(false);
   const themeSaveRequestRef = useRef(0);
 
@@ -117,6 +123,36 @@ const App = () => {
     setPageGroupDialog(undefined);
   };
   const connectObs = async () => { await api.connectObs({ url: 'ws://127.0.0.1:4455' }); };
+  const selectProfile = async (profileId: string) => {
+    setProfileSwitchError(undefined);
+    try {
+      await api.selectProfile(profileId);
+      setSelectedSlotId(undefined);
+      setPageGroupDialog(undefined);
+    } catch (error) {
+      setProfileSwitchError(error instanceof Error ? error.message : String(error));
+    }
+  };
+  const openProfileDialog = (mode: ProfileDialogState['mode']) => {
+    profileDialogTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setProfileDialogError(undefined);
+    setProfileDialog({ mode });
+  };
+  const submitProfileDialog = async (name: string) => {
+    if (!profileDialog) return;
+    try {
+      await api.createProfile({
+        name,
+        ...(profileDialog.mode === 'duplicate' ? { duplicateFromId: snapshot.profile.id } : {}),
+      });
+      setProfileDialog(undefined);
+      setProfileDialogError(undefined);
+      setSelectedSlotId(undefined);
+      setPageGroupDialog(undefined);
+    } catch (error) {
+      setProfileDialogError(error instanceof Error ? error.message : String(error));
+    }
+  };
   const saveThemePreference = async (nextTheme: ThemePreference) => {
     const requestId = themeSaveRequestRef.current + 1;
     themeSaveRequestRef.current = requestId;
@@ -151,9 +187,16 @@ const App = () => {
         onConnectObs={() => { void connectObs(); }}
         onOpenSettings={() => setScreen('settings')}
         isSettingsOpen={false}
+        profiles={snapshot.profiles}
+        activeProfileId={snapshot.activeProfileId}
+        device={snapshot.device}
+        obs={snapshot.obs}
+        onSelectProfile={(profileId) => { void selectProfile(profileId); }}
+        onCreateProfile={() => openProfileDialog('create')}
+        onDuplicateProfile={() => openProfileDialog('duplicate')}
         settingsButtonRef={settingsTriggerRef}
       />
-      <ConnectionStatus device={snapshot.device} obs={snapshot.obs} />
+      {profileSwitchError && <p className="profile-switch-error" role="alert">{profileSwitchError}</p>}
       <div className="workspace-body">
         <section className="layout-panel">
           <div className="panel-heading">
@@ -192,7 +235,7 @@ const App = () => {
           <p className="muted helper-text">Assign an action to each key, then save the profile to push it to the D200H. Folder buttons open grouped shortcuts.</p>
         </section>
         <aside className="workspace-sidebar" aria-label="Workspace sidebar">
-          {selectedSlotId && <SlotEditor key={`${snapshot.activePageId}:${selectedSlotId}`} slot={selectedSlot ? structuredClone(selectedSlot) : undefined} slotId={selectedSlotId} folders={selectableFolders} pageTargets={snapshot.profile.pages} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
+          {selectedSlotId && <SlotEditor key={`${snapshot.profile.id}:${snapshot.activePageId}:${selectedSlotId}`} slot={selectedSlot ? structuredClone(selectedSlot) : undefined} slotId={selectedSlotId} folders={selectableFolders} pageTargets={snapshot.profile.pages} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
           <PageManager profile={snapshot.profile} activePageId={snapshot.activePageId} onSaveProfile={saveProfile} onSelectPage={(id) => { void api.selectPage(id); }} onEditPageGroup={(pageId, trigger) => { pageGroupTriggerRef.current = trigger; setPageGroupDialog({ mode: 'edit', pageId }); }} />
         </aside>
       </div>
@@ -213,6 +256,16 @@ const App = () => {
           saveError={themeSaveError}
           onThemeChange={(nextTheme) => { void saveThemePreference(nextTheme); }}
           onBack={returnToWorkspace}
+        />
+      )}
+      {profileDialog && (
+        <ProfileDialog
+          mode={profileDialog.mode}
+          initialName={profileDialog.mode === 'duplicate' ? snapshot.profile.name : undefined}
+          error={profileDialogError}
+          returnFocusRef={profileDialogTriggerRef}
+          onClose={() => { setProfileDialog(undefined); setProfileDialogError(undefined); }}
+          onSubmit={(name) => { void submitProfileDialog(name); }}
         />
       )}
     </>

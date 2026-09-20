@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppSnapshot } from '../../src/main/runtime';
@@ -23,7 +23,10 @@ const streamSnapshotFixture: AppSnapshot = {
       '0_0': { id: '0_0', label: 'Stream', action: { type: 'obs.stream.toggle' } },
     }}],
   },
-  profiles: [{ id: 'stream-control', name: 'Stream Control' }],
+  profiles: [
+    { id: 'stream-control', name: 'Stream Control' },
+    { id: 'studio', name: 'Studio' },
+  ],
   activeProfileId: 'stream-control',
   activePageId: 'main',
   renderedPage: {
@@ -110,6 +113,71 @@ describe('profile editor', () => {
 
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Build your stream surface' })).not.toBeInTheDocument();
+  });
+
+  it('lists profiles and switches the active profile from the toolbar', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(await screen.findByRole('combobox', { name: 'Profile' })).toHaveValue('stream-control');
+    expect(screen.getByRole('option', { name: 'Studio' })).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Profile' }), 'studio');
+
+    expect(api.selectProfile).toHaveBeenCalledWith('studio');
+  });
+
+  it('creates and duplicates profiles through the profile actions menu', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Profile actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'New profile' }));
+    expect(screen.getByRole('heading', { name: 'Create Profile' })).toBeInTheDocument();
+    await user.type(within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Profile name' }), 'New Layout');
+    await user.click(screen.getByRole('button', { name: 'Create profile' }));
+    expect(api.createProfile).toHaveBeenCalledWith({ name: 'New Layout' });
+
+    await user.click(screen.getByRole('button', { name: 'Profile actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Duplicate profile' }));
+    expect(within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Profile name' })).toHaveValue('Stream Control');
+    await user.click(screen.getByRole('button', { name: 'Duplicate profile' }));
+    expect(api.createProfile).toHaveBeenCalledWith({ name: 'Stream Control', duplicateFromId: 'stream-control' });
+  });
+
+  it('keeps the current profile and shows a dialog error when creation fails', async () => {
+    const user = userEvent.setup();
+    api.createProfile.mockRejectedValueOnce(new Error('Profile could not be saved'));
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Profile actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'New profile' }));
+    await user.type(within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Profile name' }), 'Broken');
+    await user.click(screen.getByRole('button', { name: 'Create profile' }));
+
+    expect(screen.getByRole('heading', { name: 'Create Profile' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not be saved/i);
+    expect(screen.getByRole('combobox', { name: 'Profile' })).toHaveValue('stream-control');
+  });
+
+  it('remounts the slot editor when switching profiles', async () => {
+    const user = userEvent.setup();
+    let publishSnapshot: ((snapshot: AppSnapshot) => void) | undefined;
+    api.onSnapshot.mockImplementationOnce(((listener: (snapshot: AppSnapshot) => void) => {
+      publishSnapshot = listener;
+      return () => undefined;
+    }) as typeof api.onSnapshot);
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    await user.click(screen.getByLabelText('Button label'));
+    await user.clear(screen.getByLabelText('Button label'));
+    await user.type(screen.getByLabelText('Button label'), 'Draft');
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Profile' }), 'studio');
+    publishSnapshot?.({ ...streamSnapshotFixture, activeProfileId: 'studio', profile: { ...streamSnapshotFixture.profile, id: 'studio', name: 'Studio' } });
+
+    expect(screen.queryByRole('region', { name: 'Slot editor' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /slot 0_0/i }));
+    expect(screen.getByLabelText('Button label')).toHaveValue('Stream');
   });
 
   it('shows Auto selected with Light, Dark, and Auto theme choices', async () => {

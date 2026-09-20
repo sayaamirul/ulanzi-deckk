@@ -119,4 +119,81 @@ describe('runtime', () => {
     expect(snapshots).toContain('obs-connected');
     expect(runtime.getSnapshot().renderedPage.slots['0_0'].visual).toBe('inactive');
   });
+
+  it('opens a folder and returns to its parent through page actions', async () => {
+    const profile: Profile = {
+      ...streamProfileFixture,
+      pages: [
+        {
+          id: 'main',
+          name: 'Main',
+          slots: {
+            '0_0': { id: '0_0', label: 'Apps', action: { type: 'page.goto', pageId: 'apps' } },
+          },
+        },
+        {
+          id: 'apps',
+          name: 'Apps',
+          kind: 'folder',
+          parentPageId: 'main',
+          slots: {
+            '0_1': { id: '0_1', label: 'Back', action: { type: 'page.back' } },
+          },
+        },
+      ],
+    };
+    const { runtime, fakes } = createRuntimeWithFakes(profile);
+    await runtime.start();
+
+    await runtime.dispatchSlot('0_0');
+    expect(runtime.getSnapshot().activePageId).toBe('apps');
+    expect(fakes.device.pageCalls).toHaveLength(2);
+
+    await runtime.dispatchSlot('0_1');
+    expect(runtime.getSnapshot().activePageId).toBe('main');
+    expect(fakes.device.pageCalls).toHaveLength(3);
+  });
+
+  it('rejects opening a folder from a page that is not its parent', async () => {
+    const profile: Profile = {
+      ...streamProfileFixture,
+      activePageId: 'other',
+      pages: [
+        { id: 'main', name: 'Main', slots: {} },
+        {
+          id: 'other',
+          name: 'Other',
+          slots: {
+            '0_0': { id: '0_0', label: 'Apps', action: { type: 'page.goto', pageId: 'apps' } },
+          },
+        },
+        { id: 'apps', name: 'Apps', kind: 'folder', parentPageId: 'main', slots: {} },
+      ],
+    };
+    const { runtime, fakes } = createRuntimeWithFakes(profile);
+    await runtime.start();
+
+    await runtime.dispatchSlot('0_0');
+
+    expect(runtime.getSnapshot().activePageId).toBe('other');
+    expect(fakes.device.pageCalls).toHaveLength(1);
+    expect(runtime.getSnapshot().lastError?.message).toMatch(/folder parent must match/i);
+  });
+
+  it('keeps normal-page Back navigation on the previous top-level page', async () => {
+    const profile: Profile = {
+      ...streamProfileFixture,
+      activePageId: 'other',
+      pages: [
+        { id: 'main', name: 'Main', slots: {} },
+        { id: 'other', name: 'Other', slots: { '0_0': { id: '0_0', label: 'Back', action: { type: 'page.back' } } } },
+      ],
+    };
+    const { runtime } = createRuntimeWithFakes(profile);
+    await runtime.start();
+
+    await runtime.dispatchSlot('0_0');
+
+    expect(runtime.getSnapshot().activePageId).toBe('main');
+  });
 });

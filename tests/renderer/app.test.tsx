@@ -126,7 +126,26 @@ describe('profile editor', () => {
     expect(toolbar).toContainElement(status);
     expect(toolbar).toContainElement(save);
     expect(profileName.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(toolbar).queryByRole('button', { name: 'Connect OBS' })).not.toBeInTheDocument();
+    expect(within(toolbar).queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument();
     expect(screen.getAllByLabelText('Connection status')).toHaveLength(1);
+  });
+
+  it('places icon-only OBS and Settings actions in the sidebar card', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const sidebar = await screen.findByRole('complementary', { name: 'Workspace sidebar' });
+    const actionsCard = within(sidebar).getByRole('region', { name: 'Workspace actions' });
+    const connectButton = within(actionsCard).getByRole('button', { name: 'Connect OBS' });
+    const settingsButton = within(actionsCard).getByRole('button', { name: 'Settings' });
+
+    expect(connectButton).toHaveAttribute('title', 'Connect OBS');
+    expect(settingsButton).toHaveAttribute('title', 'Settings');
+    expect(connectButton.querySelector('svg')).toBeInTheDocument();
+    expect(settingsButton.querySelector('svg')).toBeInTheDocument();
+    await user.click(connectButton);
+    expect(api.connectObs).toHaveBeenCalledWith({ url: 'ws://127.0.0.1:4455' });
   });
 
   it('lists profiles and switches the active profile from the toolbar', async () => {

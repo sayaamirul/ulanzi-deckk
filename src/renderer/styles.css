@@ -315,6 +315,17 @@ button:disabled {
   padding: 20px;
 }
 
+.workspace-actions-card {
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 8px 12px;
+}
+
 .panel-heading {
   align-items: flex-end;
   margin-bottom: 16px;
@@ -427,6 +438,11 @@ button:disabled {
 .icon-button svg {
   height: 16px;
   width: 16px;
+}
+
+.workspace-actions-card .icon-button {
+  min-height: 36px;
+  min-width: 36px;
 }
 
 .icon-button:disabled {

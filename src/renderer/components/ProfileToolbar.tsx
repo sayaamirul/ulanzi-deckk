@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type Ref } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ProfileSummary } from '../../domain/profile/types';
 import type { DeviceRuntimeState, ObsRuntimeState } from '../../domain/state/types';
 import { ConnectionStatus } from './ConnectionStatus';
@@ -7,9 +7,6 @@ type Props = {
   profileName: string;
   onNameChange: (name: string) => void;
   onSave: () => void;
-  onConnectObs: () => void;
-  onOpenSettings: () => void;
-  isSettingsOpen: boolean;
   profiles: ProfileSummary[];
   activeProfileId: string;
   device: DeviceRuntimeState;
@@ -17,16 +14,12 @@ type Props = {
   onSelectProfile: (profileId: string) => void;
   onCreateProfile: () => void;
   onDuplicateProfile: () => void;
-  settingsButtonRef?: Ref<HTMLButtonElement>;
 };
 
 export const ProfileToolbar = ({
   profileName,
   onNameChange,
   onSave,
-  onConnectObs,
-  onOpenSettings,
-  isSettingsOpen,
   profiles,
   activeProfileId,
   device,
@@ -34,7 +27,6 @@ export const ProfileToolbar = ({
   onSelectProfile,
   onCreateProfile,
   onDuplicateProfile,
-  settingsButtonRef,
 }: Props) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -75,8 +67,6 @@ export const ProfileToolbar = ({
       </div>
       <div className="toolbar-actions">
         <ConnectionStatus className="connection-status-compact" device={device} obs={obs} />
-        <button type="button" onClick={onConnectObs}>Connect OBS</button>
-        <button ref={settingsButtonRef} className={isSettingsOpen ? 'is-active' : undefined} type="button" aria-pressed={isSettingsOpen} onClick={onOpenSettings}>Settings</button>
       </div>
     </header>
   );

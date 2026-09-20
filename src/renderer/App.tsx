@@ -12,6 +12,7 @@ import { PageManager } from './components/PageManager';
 import { PageGroupDialog } from './components/PageGroupDialog';
 import { SettingsPage } from './components/SettingsPage';
 import { SlotEditor } from './components/SlotEditor';
+import { WorkspaceActionsCard } from './components/WorkspaceActionsCard';
 import { applyTheme, normalizeThemePreference, subscribeToSystemTheme } from './theme';
 import type { ThemePreference } from './theme';
 
@@ -188,9 +189,6 @@ const App = () => {
         profileName={snapshot.profile.name}
         onNameChange={renameProfile}
         onSave={() => { void saveProfile(); }}
-        onConnectObs={() => { void connectObs(); }}
-        onOpenSettings={() => setScreen('settings')}
-        isSettingsOpen={false}
         profiles={snapshot.profiles}
         activeProfileId={snapshot.activeProfileId}
         device={snapshot.device}
@@ -198,7 +196,6 @@ const App = () => {
         onSelectProfile={(profileId) => { void selectProfile(profileId); }}
         onCreateProfile={() => openProfileDialog('create')}
         onDuplicateProfile={() => openProfileDialog('duplicate')}
-        settingsButtonRef={settingsTriggerRef}
       />
       {profileSwitchError && <p className="profile-switch-error" role="alert">{profileSwitchError}</p>}
       <div className="workspace-body">
@@ -241,6 +238,7 @@ const App = () => {
         <aside className="workspace-sidebar" aria-label="Workspace sidebar">
           {selectedSlotId && <SlotEditor key={`${snapshot.profile.id}:${snapshot.activePageId}:${selectedSlotId}`} slot={selectedSlot ? structuredClone(selectedSlot) : undefined} slotId={selectedSlotId} folders={selectableFolders} pageTargets={snapshot.profile.pages} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
           <PageManager profile={snapshot.profile} activePageId={snapshot.activePageId} onSaveProfile={saveProfile} onSelectPage={(id) => { void api.selectPage(id); }} onEditPageGroup={(pageId, trigger) => { pageGroupTriggerRef.current = trigger; setPageGroupDialog({ mode: 'edit', pageId }); }} />
+          <WorkspaceActionsCard onConnectObs={() => { void connectObs(); }} onOpenSettings={() => setScreen('settings')} settingsButtonRef={settingsTriggerRef} />
         </aside>
       </div>
       {pageGroupDialog && (

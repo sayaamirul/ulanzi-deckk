@@ -81,9 +81,11 @@ class FakeProfileCatalog {
 class FakePreferences {
   value: AppPreferences = { theme: 'dark' };
   readonly saves: AppPreferences[] = [];
+  failSaves = false;
 
   async load(): Promise<AppPreferences> { return { ...this.value }; }
   async save(value: AppPreferences): Promise<void> {
+    if (this.failSaves) throw new Error('preferences unavailable');
     this.value = { ...value };
     this.saves.push({ ...value });
   }
@@ -162,6 +164,19 @@ describe('runtime', () => {
     expect(fakes.preferences.value).toEqual({ theme: 'dark', activeProfileId: 'studio' });
     expect(fakes.preferences.saves.at(-1)).toEqual({ theme: 'dark', activeProfileId: 'studio' });
     expect(snapshots).toContain('studio');
+  });
+
+  it('rolls back a profile switch when preference persistence fails', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+    const studio = { ...streamProfileFixture, id: 'studio', name: 'Studio' };
+    fakes.profileCatalog.profiles.set(studio.id, studio);
+    await runtime.start();
+    fakes.preferences.failSaves = true;
+
+    await expect(runtime.selectProfile('studio')).rejects.toThrow(/preferences unavailable/i);
+
+    expect(runtime.getSnapshot().activeProfileId).toBe('stream-control');
+    expect(runtime.getSnapshot().profile.name).toBe('Stream Control');
   });
 
   it('creates fresh and duplicated profiles with isolated pages and slots', async () => {

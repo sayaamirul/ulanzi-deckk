@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { ProfileStore } from '../domain/profile/store';
 import type { Profile } from '../domain/profile/types';
 import { FilePreferencesStore } from './preferences';
-import type { PreferencesStore } from './preferences';
+import type { AppPreferences, PreferencesStore } from './preferences';
 import { FileProfileCatalogStore } from './profile-catalog';
 import type { ProfileCatalogStore } from './profile-catalog';
 
@@ -78,6 +78,15 @@ export const createFileProfileCatalogStore = async (): Promise<ProfileCatalogSto
   const directory = profileDirectory();
   await mkdir(directory, { recursive: true });
   return new FileProfileCatalogStore(directory);
+};
+
+export const repairActiveProfilePreference = async (
+  preferencesStore: PreferencesStore,
+  preferences: AppPreferences,
+  profile: Profile,
+): Promise<void> => {
+  if (preferences.activeProfileId === profile.id) return;
+  await preferencesStore.save({ ...preferences, activeProfileId: profile.id });
 };
 
 export const createFilePreferencesStore = async (): Promise<PreferencesStore> => {

@@ -136,11 +136,20 @@ export class Runtime {
 
   async selectProfile(profileId: string): Promise<void> {
     const nextProfile = await this.profileStore.load(profileId);
+    await this.refreshProfiles();
+    const previousProfile = this.profile;
+    const previousPageId = this.activePageId;
     this.profile = structuredClone(nextProfile);
     this.activePageId = nextProfile.activePageId;
-    await this.refreshProfiles();
-    await this.pushPage();
-    await this.persistActiveProfileId(nextProfile.id);
+    try {
+      await this.pushPage();
+      await this.persistActiveProfileId(nextProfile.id);
+    } catch (error) {
+      this.profile = previousProfile;
+      this.activePageId = previousPageId;
+      await this.pushPage();
+      throw error;
+    }
     this.lastError = undefined;
     this.publish();
   }

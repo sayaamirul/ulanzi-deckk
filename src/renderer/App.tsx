@@ -164,7 +164,7 @@ const App = () => {
     setThemePreference(nextTheme);
     setThemeSaveError(undefined);
     try {
-      await api.savePreferences({ theme: nextTheme });
+      await api.savePreferences({ theme: nextTheme, activeProfileId: snapshot.activeProfileId });
     } catch {
       if (themeSaveRequestRef.current === requestId) {
         setThemeSaveError('Could not save your theme preference.');
@@ -265,7 +265,7 @@ const App = () => {
       {profileDialog && (
         <ProfileDialog
           mode={profileDialog.mode}
-          initialName={profileDialog.mode === 'duplicate' ? snapshot.profile.name : undefined}
+          initialName={profileDialog.mode === 'duplicate' ? `${snapshot.profile.name} Copy` : undefined}
           error={profileDialogError}
           returnFocusRef={profileDialogTriggerRef}
           onClose={closeProfileDialog}

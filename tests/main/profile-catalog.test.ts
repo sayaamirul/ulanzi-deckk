@@ -43,6 +43,15 @@ describe('profile catalog', () => {
     await expect(readFile(join(directory, 'studio.json'), 'utf8')).resolves.toContain('"name": "Studio"');
   });
 
+  it('rejects a profile whose embedded id does not match its filename', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ulanzi-profiles-'));
+    temporaryDirectories.push(directory);
+    const store = new FileProfileCatalogStore(directory);
+    await writeFile(join(directory, 'studio.json'), JSON.stringify({ ...createDefaultProfile(), id: 'other' }), 'utf8');
+
+    await expect(store.load('studio')).rejects.toThrow(/does not match/i);
+  });
+
   it('creates safe unique ids from profile names', () => {
     expect(createProfileId('My Profile', ['my-profile'])).toBe('my-profile-2');
     expect(createProfileId('  ', [])).toBe('profile');

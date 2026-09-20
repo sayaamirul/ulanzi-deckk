@@ -47,7 +47,9 @@ export class FileProfileCatalogStore implements ProfileCatalogStore {
 
   public async load(id: string): Promise<Profile> {
     if (!profileIdPattern.test(id)) throw new Error(`Invalid profile id: ${id}`);
-    return this.profileStore.load(join(this.directory, `${id}.json`));
+    const profile = await this.profileStore.load(join(this.directory, `${id}.json`));
+    if (profile.id !== id) throw new Error(`Profile id does not match filename: ${id}`);
+    return profile;
   }
 
   public async save(profile: Profile): Promise<void> {

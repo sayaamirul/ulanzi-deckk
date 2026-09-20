@@ -55,7 +55,7 @@ export const ProfileToolbar = ({
         <div className="profile-toolbar-fields">
           <label>
             <span className="sr-only">Profile</span>
-            <select aria-label="Profile" value={activeProfileId} onChange={(event) => onSelectProfile(event.target.value)}>
+            <select aria-label="Profile" aria-describedby="profile-switch-note" value={activeProfileId} onChange={(event) => onSelectProfile(event.target.value)}>
               {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
             </select>
           </label>
@@ -71,6 +71,7 @@ export const ProfileToolbar = ({
             )}
           </div>
         </div>
+        <p id="profile-switch-note" className="profile-toolbar-note">Switching profiles uses saved changes.</p>
       </div>
       <div className="toolbar-actions">
         <ConnectionStatus className="connection-status-compact" device={device} obs={obs} />

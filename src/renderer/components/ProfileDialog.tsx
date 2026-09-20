@@ -77,9 +77,17 @@ export const ProfileDialog = ({ mode, initialName = '', error, returnFocusRef, o
           </div>
           <label>
             Profile name
-            <input ref={inputRef} aria-label="Profile name" required value={name} onChange={(event) => setName(event.target.value)} />
+            <input
+              ref={inputRef}
+              aria-label="Profile name"
+              aria-describedby={error ? 'profile-dialog-error' : undefined}
+              aria-invalid={Boolean(error)}
+              required
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
           </label>
-          {error && <p className="profile-dialog-error" role="alert">{error}</p>}
+          {error && <p id="profile-dialog-error" className="profile-dialog-error" role="alert">{error}</p>}
           <div className="profile-dialog-actions">
             <button type="button" onClick={closeDialog}>Cancel</button>
             <button className="primary-button" type="submit" disabled={!name.trim()}>

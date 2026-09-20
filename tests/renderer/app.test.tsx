@@ -153,9 +153,9 @@ describe('profile editor', () => {
 
     await user.click(screen.getByRole('button', { name: 'Profile actions' }));
     await user.click(screen.getByRole('menuitem', { name: 'Duplicate profile' }));
-    expect(within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Profile name' })).toHaveValue('Stream Control');
+    expect(within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Profile name' })).toHaveValue('Stream Control Copy');
     await user.click(screen.getByRole('button', { name: 'Duplicate profile' }));
-    expect(api.createProfile).toHaveBeenCalledWith({ name: 'Stream Control', duplicateFromId: 'stream-control' });
+    expect(api.createProfile).toHaveBeenCalledWith({ name: 'Stream Control Copy', duplicateFromId: 'stream-control' });
   });
 
   it('keeps the current profile and shows a dialog error when creation fails', async () => {
@@ -212,7 +212,7 @@ describe('profile editor', () => {
     await user.click(screen.getByRole('radio', { name: /light/i }));
 
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(api.savePreferences).toHaveBeenCalledWith({ theme: 'light' });
+    expect(api.savePreferences).toHaveBeenCalledWith({ theme: 'light', activeProfileId: 'stream-control' });
   });
 
   it('returns to the workspace and restores focus to the Settings trigger', async () => {

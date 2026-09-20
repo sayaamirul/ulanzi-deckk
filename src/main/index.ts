@@ -6,7 +6,7 @@ import { ObsWebSocketClient } from '../actions/obs/client';
 import { LinuxSystemActionAdapter } from '../actions/system/adapter';
 import { DeviceManager } from '../device/device-manager';
 import { NodeHidTransport } from '../device/node-hid-transport';
-import { createFilePreferencesStore, createFileProfileCatalogStore, loadInitialProfile } from './config';
+import { createFilePreferencesStore, createFileProfileCatalogStore, loadInitialProfile, repairActiveProfilePreference } from './config';
 import { registerIpc } from './ipc';
 import { Runtime } from './runtime';
 import { createTray } from './tray';
@@ -44,6 +44,11 @@ app.whenReady().then(async () => {
   const preferences = await preferencesStore.load();
   const profileStore = await createFileProfileCatalogStore();
   const profile = await loadInitialProfile(profileStore, preferences.activeProfileId);
+  try {
+    await repairActiveProfilePreference(preferencesStore, preferences, profile);
+  } catch {
+    // A profile can still open if preference repair is temporarily unavailable.
+  }
   const device = new DeviceManager({
     list: () => NodeHidTransport.list(),
     open: (descriptor) => NodeHidTransport.open(descriptor),

@@ -26,5 +26,14 @@ describe('renderer theme styles', () => {
     const toolbarStyles = styles.match(/\.profile-toolbar \{[^}]*\}/)?.[0] ?? '';
     expect(toolbarStyles).not.toContain('border-bottom');
     expect(styles).toContain('.device-slot.is-selected');
+    expect(styles).toContain('padding: 20px 24px 32px;');
+    expect(styles).toContain('border-radius: 0;');
+    expect(styles).not.toContain('border-radius: 20px');
+    expect(styles).not.toContain('border-radius: 16px');
+    expect(styles).not.toContain('border-radius: 14px');
+    expect(styles).not.toContain('border-radius: 12px');
+    expect(styles).not.toContain('border-radius: 10px');
+    expect(styles).not.toContain('border-radius: 8px');
+    expect(styles).not.toContain('border-radius: 999px');
   });
 });

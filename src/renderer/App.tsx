@@ -6,6 +6,7 @@ import type { AppSnapshot } from '../main/runtime';
 import { ulanziApi } from './api';
 import { DeviceGrid } from './components/DeviceGrid';
 import { PageTabs } from './components/PageTabs';
+import { PageBreadcrumbs } from './components/PageBreadcrumbs';
 import { ProfileToolbar } from './components/ProfileToolbar';
 import { ProfileDialog } from './components/ProfileDialog';
 import { PageManager } from './components/PageManager';
@@ -230,10 +231,10 @@ const App = () => {
               </div>
             </div>
           </div>
-          <PageTabs pages={topLevelPages(snapshot.profile)} activePageId={snapshot.activePageId} onSelect={(id) => { void api.selectPage(id); }} />
-          {parentPage && <button type="button" onClick={() => { void api.selectPage(parentPage.id); }}>Back to {parentPage.name}</button>}
+          {parentPage
+            ? <PageBreadcrumbs parentPage={parentPage} currentPage={page} onNavigate={(id) => { void api.selectPage(id); }} />
+            : <PageTabs pages={topLevelPages(snapshot.profile)} activePageId={snapshot.activePageId} onSelect={(id) => { void api.selectPage(id); }} />}
           <DeviceGrid page={snapshot.renderedPage} selectedSlotId={selectedSlotId} onSelect={openSlot} />
-          <p className="muted helper-text">Assign an action to each key, then save the profile to push it to the D200H. Folder buttons open grouped shortcuts.</p>
         </section>
         <aside className="workspace-sidebar" aria-label="Workspace sidebar">
           {selectedSlotId && <SlotEditor key={`${snapshot.profile.id}:${snapshot.activePageId}:${selectedSlotId}`} slot={selectedSlot ? structuredClone(selectedSlot) : undefined} slotId={selectedSlotId} folders={selectableFolders} pageTargets={snapshot.profile.pages} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}

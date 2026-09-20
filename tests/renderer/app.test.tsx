@@ -504,6 +504,27 @@ describe('profile editor', () => {
     expect(screen.getByRole('button', { name: /open apps/i })).toBeInTheDocument();
   });
 
+  it('removes the device layout helper copy', async () => {
+    render(<App />);
+
+    expect(await screen.findByLabelText('D200H button layout')).toBeInTheDocument();
+    expect(screen.queryByText(/Assign an action to each key/i)).not.toBeInTheDocument();
+  });
+
+  it('uses a clickable Main breadcrumb inside a page group', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(activeFolderSnapshotFixture);
+    render(<App />);
+
+    const breadcrumbs = await screen.findByRole('navigation', { name: 'Page breadcrumbs' });
+    expect(breadcrumbs).toHaveTextContent('Main');
+    expect(breadcrumbs).toHaveTextContent('Apps');
+    expect(screen.queryByRole('button', { name: 'Back to Main' })).not.toBeInTheDocument();
+
+    await user.click(within(breadcrumbs).getByRole('button', { name: 'Main' }));
+    expect(api.selectPage).toHaveBeenCalledWith('main');
+  });
+
   it('opens the add page group dialog from the layout card', async () => {
     const user = userEvent.setup();
     api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);

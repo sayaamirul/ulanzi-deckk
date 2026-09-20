@@ -376,6 +376,25 @@ button:disabled {
   margin-bottom: 16px;
 }
 
+.page-breadcrumbs {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.page-breadcrumbs button {
+  background: transparent;
+  border: 0;
+  color: var(--color-accent);
+  font-weight: 700;
+  padding: 0;
+}
+
+.page-breadcrumbs span[aria-current="page"] {
+  color: var(--color-text-muted);
+}
+
 .page-manager {
   padding: 16px;
 }
@@ -503,10 +522,6 @@ button:disabled {
 .slot-number {
   color: var(--color-text-subtle);
   font-size: 0.75rem;
-}
-
-.helper-text {
-  margin: 16px 0 0;
 }
 
 .slot-editor {

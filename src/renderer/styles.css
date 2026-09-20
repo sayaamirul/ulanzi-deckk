@@ -934,6 +934,60 @@ h1 {
   justify-content: flex-end;
 }
 
+.confirm-dialog {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0;
+  color: var(--color-text);
+  max-width: calc(100vw - 32px);
+  width: 420px;
+}
+
+.confirm-dialog-backdrop {
+  align-items: center;
+  background: rgb(7 9 13 / 72%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 11;
+}
+
+.confirm-dialog-content {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+.confirm-dialog-heading {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.confirm-dialog-heading h2 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.confirm-dialog-heading .muted {
+  font-size: 0.9rem;
+  margin: 8px 0 0;
+}
+
+.confirm-dialog-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.confirm-dialog-actions .ui-button svg {
+  height: 15px;
+  width: 15px;
+}
+
 .settings-shell {
   height: 100vh;
   margin: 0 auto;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Copy, Ellipsis, Plus } from 'lucide-react';
+import { Copy, Ellipsis, Plus, Save } from 'lucide-react';
 import type { ProfileSummary } from '../../domain/profile/types';
 import type { DeviceRuntimeState, ObsRuntimeState } from '../../domain/state/types';
 import { ConnectionStatus } from './ConnectionStatus';
@@ -50,7 +50,7 @@ export const ProfileToolbar = ({
         <p className="eyebrow">STREAM PROFILE</p>
         <div className="profile-toolbar-fields">
           <FormInput aria-label="Profile name" value={profileName} onChange={(event) => onNameChange(event.target.value)} />
-          <FormButton className="primary-button" variant="solid" color="accent" type="button" onClick={onSave}>Save profile</FormButton>
+          <FormButton className="icon-button primary-button" variant="icon" color="accent" type="button" aria-label="Save profile" title="Save profile" onClick={onSave}><Save aria-hidden="true" /></FormButton>
         </div>
         <p id="profile-switch-note" className="profile-toolbar-note">Switching profiles uses saved changes.</p>
       </div>

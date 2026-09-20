@@ -138,6 +138,7 @@ describe('profile editor', () => {
     expect(profileSelect.compareDocumentPosition(profileActions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(profileActions.querySelector('.lucide-ellipsis')).toBeInTheDocument();
     expect(toolbar).toContainElement(save);
+    expect(save.querySelector('.lucide-save')).toBeInTheDocument();
     expect(profileName.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(toolbar).queryByRole('button', { name: 'Connect OBS' })).not.toBeInTheDocument();
     expect(within(toolbar).queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument();
@@ -516,6 +517,10 @@ describe('profile editor', () => {
     await user.clear(input);
     await user.type(input, 'Live Show');
     await user.click(screen.getByRole('button', { name: /save profile/i }));
+
+    expect(screen.getByRole('dialog', { name: 'Overwrite profile?' })).toBeInTheDocument();
+    expect(api.saveProfile).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Overwrite profile' }));
 
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({ name: 'Live Show' }));
   });

@@ -12,6 +12,7 @@ import { ProfileToolbar } from './components/ProfileToolbar';
 import { ProfileDialog } from './components/ProfileDialog';
 import { PageManager } from './components/PageManager';
 import { PageGroupDialog } from './components/PageGroupDialog';
+import { ConfirmDialog } from './components/ConfirmDialog';
 import { SettingsPage } from './components/SettingsPage';
 import { SlotEditor } from './components/SlotEditor';
 import { WorkspaceActionsCard } from './components/WorkspaceActionsCard';
@@ -35,6 +36,7 @@ const App = () => {
   const [selectedSlotId, setSelectedSlotId] = useState<SlotId>();
   const [pageGroupDialog, setPageGroupDialog] = useState<PageGroupDialogState>();
   const [profileDialog, setProfileDialog] = useState<ProfileDialogState>();
+  const [isProfileSaveConfirmationOpen, setIsProfileSaveConfirmationOpen] = useState(false);
   const [profileDialogError, setProfileDialogError] = useState<string>();
   const [profileSwitchError, setProfileSwitchError] = useState<string>();
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
@@ -44,6 +46,7 @@ const App = () => {
   const addMenuItemRef = useRef<HTMLButtonElement>(null);
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
   const profileDialogTriggerRef = useRef<HTMLElement>(null);
+  const profileSaveTriggerRef = useRef<HTMLElement>(null);
   const userSelectedThemeRef = useRef(false);
   const themeSaveRequestRef = useRef(0);
 
@@ -115,6 +118,14 @@ const App = () => {
   const saveProfile = async (profile: Profile = snapshot.profile) => {
     await api.saveProfile(profile);
     setSnapshot(await api.getSnapshot());
+  };
+  const requestProfileSave = () => {
+    profileSaveTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setIsProfileSaveConfirmationOpen(true);
+  };
+  const confirmProfileSave = async () => {
+    setIsProfileSaveConfirmationOpen(false);
+    await saveProfile();
   };
   const savePageGroup = async (name: string) => {
     const nextProfile = structuredClone(snapshot.profile);
@@ -191,7 +202,7 @@ const App = () => {
       <ProfileToolbar
         profileName={snapshot.profile.name}
         onNameChange={renameProfile}
-        onSave={() => { void saveProfile(); }}
+        onSave={requestProfileSave}
         profiles={snapshot.profiles}
         activeProfileId={snapshot.activeProfileId}
         device={snapshot.device}
@@ -271,6 +282,16 @@ const App = () => {
           returnFocusRef={profileDialogTriggerRef}
           onClose={closeProfileDialog}
           onSubmit={(name) => { void submitProfileDialog(name); }}
+        />
+      )}
+      {isProfileSaveConfirmationOpen && (
+        <ConfirmDialog
+          title="Overwrite profile?"
+          description={`Save the current changes to “${snapshot.profile.name}”?`}
+          confirmLabel="Overwrite profile"
+          returnFocusRef={profileSaveTriggerRef}
+          onClose={() => setIsProfileSaveConfirmationOpen(false)}
+          onConfirm={confirmProfileSave}
         />
       )}
     </>

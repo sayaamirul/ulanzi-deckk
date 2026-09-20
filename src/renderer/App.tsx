@@ -10,7 +10,10 @@ import { PageTabs } from './components/PageTabs';
 import { ProfileToolbar } from './components/ProfileToolbar';
 import { PageManager } from './components/PageManager';
 import { PageGroupDialog } from './components/PageGroupDialog';
+import { SettingsPage } from './components/SettingsPage';
 import { SlotEditor } from './components/SlotEditor';
+import { applyTheme, normalizeThemePreference, subscribeToSystemTheme } from './theme';
+import type { ThemePreference } from './theme';
 
 type PageGroupDialogState =
   | { mode: 'create' }
@@ -19,6 +22,10 @@ type PageGroupDialogState =
 const App = () => {
   const api = ulanziApi();
   const [snapshot, setSnapshot] = useState<AppSnapshot>();
+  const [screen, setScreen] = useState<'workspace' | 'settings'>('workspace');
+  const [themePreference, setThemePreference] = useState<ThemePreference>('system');
+  const [themeSaveError, setThemeSaveError] = useState<string>();
+  const [prefersDark, setPrefersDark] = useState(true);
   const [selectedSlotId, setSelectedSlotId] = useState<SlotId>();
   const [pageGroupDialog, setPageGroupDialog] = useState<PageGroupDialogState>();
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
@@ -26,6 +33,27 @@ const App = () => {
   const pageGroupTriggerRef = useRef<HTMLElement>(null);
   const addMenuRef = useRef<HTMLDivElement>(null);
   const addMenuItemRef = useRef<HTMLButtonElement>(null);
+  const settingsTriggerRef = useRef<HTMLButtonElement>(null);
+  const userSelectedThemeRef = useRef(false);
+  const themeSaveRequestRef = useRef(0);
+
+  useEffect(() => {
+    let mounted = true;
+    void api.getPreferences()
+      .then((preferences) => {
+        if (mounted && !userSelectedThemeRef.current) {
+          setThemePreference(normalizeThemePreference(preferences.theme));
+        }
+      })
+      .catch(() => undefined);
+    return () => { mounted = false; };
+  }, [api]);
+
+  useEffect(() => subscribeToSystemTheme(themePreference, setPrefersDark), [themePreference]);
+
+  useEffect(() => {
+    applyTheme(document.documentElement, themePreference, prefersDark);
+  }, [prefersDark, themePreference]);
 
   useEffect(() => {
     if (!isAddMenuOpen) return undefined;
@@ -89,18 +117,41 @@ const App = () => {
     setPageGroupDialog(undefined);
   };
   const connectObs = async () => { await api.connectObs({ url: 'ws://127.0.0.1:4455' }); };
+  const saveThemePreference = async (nextTheme: ThemePreference) => {
+    const requestId = themeSaveRequestRef.current + 1;
+    themeSaveRequestRef.current = requestId;
+    userSelectedThemeRef.current = true;
+    setThemePreference(nextTheme);
+    setThemeSaveError(undefined);
+    try {
+      await api.savePreferences({ theme: nextTheme });
+    } catch {
+      if (themeSaveRequestRef.current === requestId) {
+        setThemeSaveError('Could not save your theme preference.');
+      }
+    }
+  };
+  const returnToWorkspace = () => {
+    setScreen('workspace');
+    queueMicrotask(() => settingsTriggerRef.current?.focus());
+  };
   const parentPage = isFolderPage(page)
     ? snapshot.profile.pages.find((candidate) => candidate.id === page.parentPageId)
     : undefined;
   const selectableFolders = !isFolderPage(page) ? folderPages(snapshot.profile, page.id) : [];
 
   return (
-    <main className="workspace-shell">
+    <>
+      <div hidden={screen === 'settings'} aria-hidden={screen === 'settings'}>
+        <main className="workspace-shell">
       <ProfileToolbar
         profileName={snapshot.profile.name}
         onNameChange={renameProfile}
         onSave={() => { void saveProfile(); }}
         onConnectObs={() => { void connectObs(); }}
+        onOpenSettings={() => setScreen('settings')}
+        isSettingsOpen={false}
+        settingsButtonRef={settingsTriggerRef}
       />
       <ConnectionStatus device={snapshot.device} obs={snapshot.obs} />
       <div className="workspace-body">
@@ -154,7 +205,17 @@ const App = () => {
           onSubmit={(name) => { void savePageGroup(name); }}
         />
       )}
-    </main>
+        </main>
+      </div>
+      {screen === 'settings' && (
+        <SettingsPage
+          theme={themePreference}
+          saveError={themeSaveError}
+          onThemeChange={(nextTheme) => { void saveThemePreference(nextTheme); }}
+          onBack={returnToWorkspace}
+        />
+      )}
+    </>
   );
 };
 

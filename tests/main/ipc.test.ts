@@ -10,6 +10,8 @@ describe('IPC contract', () => {
       'dispatchSlot',
       'connectObs',
       'setBrightness',
+      'getPreferences',
+      'savePreferences',
     ]);
   });
 });

@@ -4,6 +4,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppSnapshot } from '../../src/main/runtime';
+import type { AppPreferences } from '../../src/main/preferences';
 import App from '../../src/renderer/App';
 
 const slotIds = [
@@ -44,6 +45,8 @@ const api = {
   dispatchSlot: vi.fn(async () => undefined),
   connectObs: vi.fn(async () => undefined),
   setBrightness: vi.fn(async () => undefined),
+  getPreferences: vi.fn(async (): Promise<AppPreferences> => ({ theme: 'system' })),
+  savePreferences: vi.fn(async (_preferences: AppPreferences): Promise<void> => undefined),
 };
 
 const folderSnapshotFixture: AppSnapshot = {
@@ -81,12 +84,127 @@ const activeFolderSnapshotFixture: AppSnapshot = {
 };
 
 describe('profile editor', () => {
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    delete document.documentElement.dataset.theme;
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
     api.getSnapshot.mockResolvedValue(streamSnapshotFixture);
+    api.getPreferences.mockResolvedValue({ theme: 'system' });
+    api.savePreferences.mockResolvedValue(undefined);
     Object.defineProperty(window, 'ulanzi', { configurable: true, value: api });
+  });
+
+  it('opens the Settings screen from the toolbar', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Build your stream surface' })).not.toBeInTheDocument();
+  });
+
+  it('shows Auto selected with Light, Dark, and Auto theme choices', async () => {
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('radio', { name: /light/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /dark/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /auto/i })).toBeChecked();
+  });
+
+  it('applies and persists a selected theme immediately', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+
+    await user.click(screen.getByRole('radio', { name: /light/i }));
+
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(api.savePreferences).toHaveBeenCalledWith({ theme: 'light' });
+  });
+
+  it('returns to the workspace and restores focus to the Settings trigger', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const settingsButton = await screen.findByRole('button', { name: 'Settings' });
+    await user.click(settingsButton);
+    await user.click(screen.getByRole('button', { name: /back to workspace/i }));
+
+    expect(screen.getByRole('heading', { name: 'Build your stream surface' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Settings' })).toHaveFocus();
+  });
+
+  it('keeps the selected theme and reports a persistence error', async () => {
+    const user = userEvent.setup();
+    api.savePreferences.mockRejectedValueOnce(new Error('disk full'));
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('radio', { name: /light/i }));
+
+    expect(screen.getByRole('radio', { name: /light/i })).toBeChecked();
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not save/i);
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+  });
+
+  it('does not let a delayed initial preference load overwrite a newer selection', async () => {
+    const user = userEvent.setup();
+    let resolvePreferences: ((preferences: { theme: 'light' | 'dark' | 'system' }) => void) | undefined;
+    api.getPreferences.mockImplementationOnce(() => new Promise((resolve) => {
+      resolvePreferences = resolve;
+    }));
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('radio', { name: 'Light' }));
+    expect(document.documentElement.dataset.theme).toBe('light');
+
+    await act(async () => {
+      resolvePreferences?.({ theme: 'dark' });
+    });
+
+    expect(screen.getByRole('radio', { name: 'Light' })).toBeChecked();
+    expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  it('preserves an unsaved slot draft while visiting Settings', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    await user.clear(screen.getByLabelText('Button label'));
+    await user.type(screen.getByLabelText('Button label'), 'Unsaved draft');
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('button', { name: /back to workspace/i }));
+
+    expect(screen.getByLabelText('Button label')).toHaveValue('Unsaved draft');
+  });
+
+  it('does not show a stale save error after a newer theme selection', async () => {
+    const user = userEvent.setup();
+    let rejectLight: ((error: Error) => void) | undefined;
+    api.savePreferences.mockImplementation((preferences) => (
+      preferences.theme === 'light'
+        ? new Promise<void>((_resolve, reject) => { rejectLight = reject; })
+        : Promise.resolve()
+    ));
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('radio', { name: 'Light' }));
+    await user.click(screen.getByRole('radio', { name: 'Dark' }));
+
+    await act(async () => {
+      rejectLight?.(new Error('stale failure'));
+    });
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Dark' })).toBeChecked();
   });
 
   it('shows all thirteen configurable D200H slots', async () => {

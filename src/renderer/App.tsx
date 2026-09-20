@@ -84,6 +84,10 @@ const App = () => {
   const page = useMemo(() => snapshot?.profile.pages.find((candidate) => candidate.id === snapshot.activePageId), [snapshot]);
   const selectedSlot = selectedSlotId && page ? page.slots[selectedSlotId] : undefined;
   const closePageGroupDialog = useCallback(() => setPageGroupDialog(undefined), []);
+  const closeProfileDialog = useCallback(() => {
+    setProfileDialog(undefined);
+    setProfileDialogError(undefined);
+  }, []);
 
   if (!snapshot || !page) {
     return <main className="app-shell"><p className="muted">Loading profile…</p></main>;
@@ -264,7 +268,7 @@ const App = () => {
           initialName={profileDialog.mode === 'duplicate' ? snapshot.profile.name : undefined}
           error={profileDialogError}
           returnFocusRef={profileDialogTriggerRef}
-          onClose={() => { setProfileDialog(undefined); setProfileDialogError(undefined); }}
+          onClose={closeProfileDialog}
           onSubmit={(name) => { void submitProfileDialog(name); }}
         />
       )}

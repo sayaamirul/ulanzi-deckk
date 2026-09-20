@@ -69,6 +69,7 @@ export class Runtime {
 
   constructor(dependencies: RuntimeDependencies) {
     this.profile = dependencies.profile;
+    this.profiles = [{ id: dependencies.profile.id, name: dependencies.profile.name }];
     this.activePageId = dependencies.profile.activePageId;
     this.profileStore = dependencies.profileStore;
     this.preferencesStore = dependencies.preferencesStore;

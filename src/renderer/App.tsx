@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Slot, SlotId } from '../domain/profile/types';
-import { folderPages, isFolderPage, topLevelPages } from '../domain/profile/navigation';
+import { createFolderPage, folderPages, isFolderPage, topLevelPages } from '../domain/profile/navigation';
 import type { Profile } from '../domain/profile/types';
 import type { AppSnapshot } from '../main/runtime';
 import { ulanziApi } from './api';
@@ -9,12 +9,36 @@ import { DeviceGrid } from './components/DeviceGrid';
 import { PageTabs } from './components/PageTabs';
 import { ProfileToolbar } from './components/ProfileToolbar';
 import { PageManager } from './components/PageManager';
+import { PageGroupDialog } from './components/PageGroupDialog';
 import { SlotEditor } from './components/SlotEditor';
+
+type PageGroupDialogState =
+  | { mode: 'create' }
+  | { mode: 'edit'; pageId: string };
 
 const App = () => {
   const api = ulanziApi();
   const [snapshot, setSnapshot] = useState<AppSnapshot>();
   const [selectedSlotId, setSelectedSlotId] = useState<SlotId>();
+  const [pageGroupDialog, setPageGroupDialog] = useState<PageGroupDialogState>();
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const pageGroupAddButtonRef = useRef<HTMLButtonElement>(null);
+  const pageGroupTriggerRef = useRef<HTMLElement>(null);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+  const addMenuItemRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isAddMenuOpen) return undefined;
+    addMenuItemRef.current?.focus();
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!addMenuRef.current?.contains(event.target as Node)) {
+        setIsAddMenuOpen(false);
+        pageGroupAddButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer);
+  }, [isAddMenuOpen]);
 
   useEffect(() => {
     let mounted = true;
@@ -25,6 +49,7 @@ const App = () => {
 
   const page = useMemo(() => snapshot?.profile.pages.find((candidate) => candidate.id === snapshot.activePageId), [snapshot]);
   const selectedSlot = selectedSlotId && page ? page.slots[selectedSlotId] : undefined;
+  const closePageGroupDialog = useCallback(() => setPageGroupDialog(undefined), []);
 
   if (!snapshot || !page) {
     return <main className="app-shell"><p className="muted">Loading profile…</p></main>;
@@ -49,6 +74,20 @@ const App = () => {
     await api.saveProfile(profile);
     setSnapshot(await api.getSnapshot());
   };
+  const savePageGroup = async (name: string) => {
+    const nextProfile = structuredClone(snapshot.profile);
+    if (pageGroupDialog?.mode === 'create') {
+      const parentPageId = isFolderPage(page) ? page.parentPageId : page.id;
+      if (!parentPageId) return;
+      await saveProfile(createFolderPage(nextProfile, parentPageId, name, `folder-${crypto.randomUUID()}`));
+    } else if (pageGroupDialog?.mode === 'edit') {
+      nextProfile.pages = nextProfile.pages.map((candidate) => candidate.id === pageGroupDialog.pageId
+        ? { ...candidate, name }
+        : candidate);
+      await saveProfile(nextProfile);
+    }
+    setPageGroupDialog(undefined);
+  };
   const connectObs = async () => { await api.connectObs({ url: 'ws://127.0.0.1:4455' }); };
   const parentPage = isFolderPage(page)
     ? snapshot.profile.pages.find((candidate) => candidate.id === page.parentPageId)
@@ -71,7 +110,30 @@ const App = () => {
               <p className="eyebrow">DEVICE LAYOUT</p>
               <h1>Build your stream surface</h1>
             </div>
-            <span className="panel-meta">13 programmable keys</span>
+            <div className="panel-heading-actions">
+              <span className="panel-meta">13 programmable keys</span>
+              <div ref={addMenuRef} className="page-group-add-menu">
+                <button ref={pageGroupAddButtonRef} className="icon-button page-group-add-button" type="button" aria-label="Add" title="Add" aria-expanded={isAddMenuOpen} onClick={() => setIsAddMenuOpen((open) => !open)}>+</button>
+                {isAddMenuOpen && (
+                  <div
+                    className="page-group-menu"
+                    role="menu"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        setIsAddMenuOpen(false);
+                        pageGroupAddButtonRef.current?.focus();
+                      } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        addMenuItemRef.current?.focus();
+                      }
+                    }}
+                  >
+                    <button ref={addMenuItemRef} role="menuitem" type="button" onClick={() => { pageGroupTriggerRef.current = pageGroupAddButtonRef.current; setPageGroupDialog({ mode: 'create' }); setIsAddMenuOpen(false); }}>Page Groups</button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <PageTabs pages={topLevelPages(snapshot.profile)} activePageId={snapshot.activePageId} onSelect={(id) => { void api.selectPage(id); }} />
           {parentPage && <button type="button" onClick={() => { void api.selectPage(parentPage.id); }}>Back to {parentPage.name}</button>}
@@ -80,9 +142,18 @@ const App = () => {
         </section>
         <aside className="workspace-sidebar" aria-label="Workspace sidebar">
           {selectedSlotId && <SlotEditor key={`${snapshot.activePageId}:${selectedSlotId}`} slot={selectedSlot ? structuredClone(selectedSlot) : undefined} slotId={selectedSlotId} folders={selectableFolders} pageTargets={snapshot.profile.pages} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
-          <PageManager profile={snapshot.profile} activePageId={snapshot.activePageId} onSaveProfile={saveProfile} onSelectPage={(id) => { void api.selectPage(id); }} />
+          <PageManager profile={snapshot.profile} activePageId={snapshot.activePageId} onSaveProfile={saveProfile} onSelectPage={(id) => { void api.selectPage(id); }} onEditPageGroup={(pageId, trigger) => { pageGroupTriggerRef.current = trigger; setPageGroupDialog({ mode: 'edit', pageId }); }} />
         </aside>
       </div>
+      {pageGroupDialog && (
+        <PageGroupDialog
+          mode={pageGroupDialog.mode}
+          initialName={pageGroupDialog.mode === 'edit' ? snapshot.profile.pages.find((candidate) => candidate.id === pageGroupDialog.pageId)?.name : undefined}
+          returnFocusRef={pageGroupTriggerRef}
+          onClose={closePageGroupDialog}
+          onSubmit={(name) => { void savePageGroup(name); }}
+        />
+      )}
     </main>
   );
 };

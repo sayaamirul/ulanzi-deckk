@@ -247,22 +247,115 @@ describe('profile editor', () => {
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({ name: 'Live Show' }));
   });
 
-  it('shows only normal pages in tabs and creates a folder under the active page', async () => {
+  it('shows only normal pages in tabs and keeps page groups in the sidebar', async () => {
     const user = userEvent.setup();
     api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
     render(<App />);
 
     expect(await screen.findByRole('button', { name: 'Main' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Apps' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Page and folder manager' })).toHaveTextContent('Page Groups');
+    expect(screen.getByRole('button', { name: /open apps/i })).toBeInTheDocument();
+  });
 
-    await user.type(screen.getByLabelText('Folder name'), 'Utilities');
-    await user.click(screen.getByRole('button', { name: /create folder/i }));
+  it('opens the add page group dialog from the layout card', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Add' }));
+    expect(screen.getByRole('menuitem', { name: 'Page Groups' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Page Groups' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menuitem', { name: 'Page Groups' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Page Groups' }));
+
+    expect(screen.getByRole('dialog', { name: 'Add Page Group' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Page group name')).toBeInTheDocument();
+    expect(screen.getByLabelText('Page group name')).toHaveFocus();
+    await user.type(screen.getByLabelText('Page group name'), 'Example');
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: /create page group/i })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Close dialog' })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByRole('button', { name: /create page group/i })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Add Page Group' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
+  });
+
+  it('creates a page group from the layout card dialog', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Add' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Page Groups' }));
+    await user.type(screen.getByLabelText('Page group name'), 'Utilities');
+    await user.click(screen.getByRole('button', { name: /create page group/i }));
 
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
       pages: expect.arrayContaining([
         expect.objectContaining({ name: 'Utilities', kind: 'folder', parentPageId: 'main' }),
       ]),
     }));
+  });
+
+  it('edits a page group from its sidebar card dialog', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /edit apps/i }));
+    expect(screen.getByRole('dialog', { name: 'Edit Page Group' })).toBeInTheDocument();
+    await user.clear(screen.getByLabelText('Page group name'));
+    await user.type(screen.getByLabelText('Page group name'), 'Applications');
+    await user.click(screen.getByRole('button', { name: /save page group/i }));
+
+    expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
+      pages: expect.arrayContaining([
+        expect.objectContaining({ id: 'apps', name: 'Applications' }),
+      ]),
+    }));
+  });
+
+  it('restores focus to the edit trigger when the dialog closes', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /edit apps/i }));
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByRole('button', { name: /edit apps/i })).toHaveFocus();
+  });
+
+  it('keeps dialog focus when a profile snapshot updates', async () => {
+    const user = userEvent.setup();
+    let publishSnapshot: ((snapshot: AppSnapshot) => void) | undefined;
+    const captureSnapshotListener = (listener: (snapshot: AppSnapshot) => void) => {
+      publishSnapshot = listener;
+      return () => undefined;
+    };
+    api.onSnapshot.mockImplementation(captureSnapshotListener as typeof api.onSnapshot);
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Add' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Page Groups' }));
+    await user.type(screen.getByLabelText('Page group name'), 'Example');
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+
+    await act(async () => { publishSnapshot?.({ ...folderSnapshotFixture }); });
+
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
   });
 
   it('assigns a folder-open action from the folder selector', async () => {
@@ -317,7 +410,7 @@ describe('profile editor', () => {
     await user.click(screen.getByRole('button', { name: /cancel/i }));
     await user.click(screen.getByRole('button', { name: /delete apps/i }));
 
-    expect(await screen.findByText('No folders yet.')).toBeInTheDocument();
+    expect(await screen.findByText('No page groups yet.')).toBeInTheDocument();
     expect(api.getSnapshot).toHaveBeenCalledTimes(2);
   });
 

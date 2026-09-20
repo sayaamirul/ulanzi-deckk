@@ -32,7 +32,7 @@ describe('page manager', () => {
   it('blocks linked-folder deletion and identifies the linking slot', async () => {
     const user = userEvent.setup();
     const onSaveProfile = vi.fn(async () => undefined);
-    render(<PageManager profile={profile} activePageId="main" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} />);
+    render(<PageManager profile={profile} activePageId="main" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} onEditPageGroup={vi.fn()} />);
 
     const apps = screen.getByRole('button', { name: /delete apps/i });
     expect(apps).toBeDisabled();
@@ -44,7 +44,7 @@ describe('page manager', () => {
   it('deletes an unlinked folder', async () => {
     const user = userEvent.setup();
     const onSaveProfile = vi.fn(async () => undefined);
-    render(<PageManager profile={profile} activePageId="main" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} />);
+    render(<PageManager profile={profile} activePageId="main" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} onEditPageGroup={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: /delete free/i }));
 
@@ -53,19 +53,15 @@ describe('page manager', () => {
     }));
   });
 
-  it('renames a folder explicitly', async () => {
+  it('opens the edit action for a page group card', async () => {
     const user = userEvent.setup();
     const onSaveProfile = vi.fn(async () => undefined);
-    render(<PageManager profile={profile} activePageId="main" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} />);
+    const onEditPageGroup = vi.fn();
+    render(<PageManager profile={profile} activePageId="main" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} onEditPageGroup={onEditPageGroup} />);
 
-    const name = screen.getByLabelText('Folder name free');
-    await user.clear(name);
-    await user.type(name, 'Tools');
-    await user.click(screen.getByRole('button', { name: /rename free/i }));
+    await user.click(screen.getByRole('button', { name: /edit free/i }));
 
-    expect(onSaveProfile).toHaveBeenCalledWith(expect.objectContaining({
-      pages: expect.arrayContaining([expect.objectContaining({ id: 'free', name: 'Tools' })]),
-    }));
+    expect(onEditPageGroup).toHaveBeenCalledWith('free', expect.any(HTMLElement));
   });
 
   it('moves the active page to its parent before deleting an open folder', async () => {
@@ -76,7 +72,7 @@ describe('page manager', () => {
       activePageId: 'apps',
       pages: profile.pages.map((page) => page.id === 'main' ? { ...page, slots: {} } : page),
     };
-    render(<PageManager profile={activeProfile} activePageId="apps" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} />);
+    render(<PageManager profile={activeProfile} activePageId="apps" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} onEditPageGroup={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: /delete apps/i }));
 

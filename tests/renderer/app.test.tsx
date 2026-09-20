@@ -80,6 +80,16 @@ describe('profile editor', () => {
     expect(screen.queryByText('2_4')).not.toBeInTheDocument();
   });
 
+  it('keeps slot and folder management together in the workspace sidebar', async () => {
+    render(<App />);
+
+    const sidebar = await screen.findByRole('complementary', { name: 'Workspace sidebar' });
+    const pageManager = screen.getByRole('region', { name: 'Page and folder manager' });
+
+    expect(sidebar).toContainElement(pageManager);
+    expect(document.querySelector('.layout-panel')).not.toContainElement(pageManager);
+  });
+
   it('saves an OBS scene action from the slot editor', async () => {
     const user = userEvent.setup();
     render(<App />);

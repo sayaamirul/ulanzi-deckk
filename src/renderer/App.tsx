@@ -77,9 +77,11 @@ const App = () => {
           {parentPage && <button type="button" onClick={() => { void api.selectPage(parentPage.id); }}>Back to {parentPage.name}</button>}
           <DeviceGrid page={snapshot.renderedPage} onSelect={openSlot} />
           <p className="muted helper-text">Assign an action to each key, then save the profile to push it to the D200H. Folder buttons open grouped shortcuts.</p>
-          <PageManager profile={snapshot.profile} activePageId={snapshot.activePageId} onSaveProfile={saveProfile} onSelectPage={(id) => { void api.selectPage(id); }} />
         </section>
-        {selectedSlot && <SlotEditor slot={structuredClone(selectedSlot)} folders={selectableFolders} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
+        <aside className="workspace-sidebar" aria-label="Workspace sidebar">
+          {selectedSlot && <SlotEditor slot={structuredClone(selectedSlot)} folders={selectableFolders} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
+          <PageManager profile={snapshot.profile} activePageId={snapshot.activePageId} onSaveProfile={saveProfile} onSelectPage={(id) => { void api.selectPage(id); }} />
+        </aside>
       </div>
     </main>
   );

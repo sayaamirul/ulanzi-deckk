@@ -90,6 +90,17 @@ body {
   gap: 24px;
 }
 
+.workspace-sidebar {
+  align-self: start;
+  display: grid;
+  gap: 16px;
+  max-height: calc(100vh - 48px);
+  min-width: 0;
+  overflow-y: auto;
+  position: sticky;
+  top: 24px;
+}
+
 .layout-panel,
 .slot-editor {
   background: #171a22;
@@ -119,9 +130,10 @@ body {
 }
 
 .page-manager {
-  border-top: 1px solid #292d39;
-  margin-top: 28px;
-  padding-top: 24px;
+  background: #171a22;
+  border: 1px solid #292d39;
+  border-radius: 20px;
+  padding: 24px;
 }
 
 .page-manager-heading h2 {
@@ -232,8 +244,6 @@ button:focus-visible {
 
 .slot-editor {
   align-self: start;
-  position: sticky;
-  top: 24px;
 }
 
 .slot-editor label,
@@ -296,7 +306,9 @@ h1 {
     grid-template-columns: 1fr;
   }
 
-  .slot-editor {
+  .workspace-sidebar {
+    max-height: none;
+    overflow: visible;
     position: static;
   }
 }

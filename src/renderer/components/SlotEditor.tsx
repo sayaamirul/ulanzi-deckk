@@ -14,7 +14,7 @@ export const SlotEditor = ({ slot, folders, onSave, onCancel }: Props) => {
   const update = (value: Partial<Slot>) => setDraft((current) => ({ ...current, ...value }));
 
   return (
-    <aside className="slot-editor" aria-label="Slot editor">
+    <section className="slot-editor" aria-label="Slot editor">
       <div className="editor-heading">
         <div>
           <p className="eyebrow">EDIT SLOT {draft.id}</p>
@@ -31,6 +31,6 @@ export const SlotEditor = ({ slot, folders, onSave, onCancel }: Props) => {
         <button className="primary-button" type="button" onClick={() => onSave(draft)}>Save slot</button>
         <button type="button" onClick={onCancel}>Cancel</button>
       </div>
-    </aside>
+    </section>
   );
 };

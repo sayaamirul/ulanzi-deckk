@@ -297,8 +297,30 @@ describe('profile editor', () => {
   it('shows all thirteen configurable D200H slots', async () => {
     render(<App />);
 
-    expect(await screen.findAllByRole('button', { name: /slot/i })).toHaveLength(13);
+    const grid = await screen.findByLabelText('D200H button layout');
+    expect(within(grid).getAllByRole('button', { name: /slot/i })).toHaveLength(13);
+    expect(within(grid).getByText('1')).toBeInTheDocument();
+    expect(within(grid).getByText('13')).toBeInTheDocument();
     expect(screen.queryByText('2_4')).not.toBeInTheDocument();
+  });
+
+  it('marks the selected grid key and moves the indicator when another key is chosen', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const firstKey = await screen.findByRole('button', { name: /slot 0_0/i });
+    const secondKey = screen.getByRole('button', { name: /slot 0_1/i });
+    expect(firstKey).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(firstKey);
+    expect(firstKey).toHaveAttribute('aria-pressed', 'true');
+    expect(firstKey).toHaveClass('is-selected');
+    expect(secondKey).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(secondKey);
+    expect(firstKey).toHaveAttribute('aria-pressed', 'false');
+    expect(secondKey).toHaveAttribute('aria-pressed', 'true');
+    expect(secondKey).toHaveClass('is-selected');
   });
 
   it('opens an empty action card for an unassigned key', async () => {

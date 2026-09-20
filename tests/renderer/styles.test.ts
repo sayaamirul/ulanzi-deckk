@@ -22,5 +22,9 @@ describe('renderer theme styles', () => {
     expect(styles).toContain('.workspace-body');
     expect(styles).toContain('overflow: auto;');
     expect(styles).not.toContain('#7ee787');
+
+    const toolbarStyles = styles.match(/\.profile-toolbar \{[^}]*\}/)?.[0] ?? '';
+    expect(toolbarStyles).not.toContain('border-bottom');
+    expect(styles).toContain('.device-slot.is-selected');
   });
 });

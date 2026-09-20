@@ -235,7 +235,7 @@ const App = () => {
           </div>
           <PageTabs pages={topLevelPages(snapshot.profile)} activePageId={snapshot.activePageId} onSelect={(id) => { void api.selectPage(id); }} />
           {parentPage && <button type="button" onClick={() => { void api.selectPage(parentPage.id); }}>Back to {parentPage.name}</button>}
-          <DeviceGrid page={snapshot.renderedPage} onSelect={openSlot} />
+          <DeviceGrid page={snapshot.renderedPage} selectedSlotId={selectedSlotId} onSelect={openSlot} />
           <p className="muted helper-text">Assign an action to each key, then save the profile to push it to the D200H. Folder buttons open grouped shortcuts.</p>
         </section>
         <aside className="workspace-sidebar" aria-label="Workspace sidebar">

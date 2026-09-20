@@ -8,21 +8,37 @@ type Props = {
   onChange: (action: Action) => void;
 };
 
-const actionOptions: Array<{ value: Action['type']; label: string }> = [
-  { value: 'obs.scene.set', label: 'OBS · Switch scene' },
-  { value: 'obs.source.visibility.toggle', label: 'OBS · Toggle source' },
-  { value: 'obs.stream.toggle', label: 'OBS · Toggle stream' },
-  { value: 'obs.record.toggle', label: 'OBS · Toggle recording' },
-  { value: 'obs.replay.toggle', label: 'OBS · Toggle replay buffer' },
-  { value: 'obs.input.mute.toggle', label: 'OBS · Toggle input mute' },
-  { value: 'obs.transition.trigger', label: 'OBS · Trigger transition' },
-  { value: 'system.launch', label: 'System · Launch app' },
-  { value: 'system.open', label: 'System · Open URL/file' },
-  { value: 'system.shortcut', label: 'System · Keyboard shortcut' },
-  { value: 'system.shell', label: 'System · Shell command' },
-  { value: 'page.goto', label: 'Page · Open folder' },
-  { value: 'page.back', label: 'Page · Back' },
-];
+type ActionGroup = 'OBS' | 'Page' | 'System';
+
+type ActionOption = { value: Action['type']; label: string };
+
+const actionGroups: Record<ActionGroup, ActionOption[]> = {
+  OBS: [
+    { value: 'obs.scene.set', label: 'Switch scene' },
+    { value: 'obs.source.visibility.toggle', label: 'Toggle source' },
+    { value: 'obs.stream.toggle', label: 'Toggle stream' },
+    { value: 'obs.record.toggle', label: 'Toggle recording' },
+    { value: 'obs.replay.toggle', label: 'Toggle replay buffer' },
+    { value: 'obs.input.mute.toggle', label: 'Toggle input mute' },
+    { value: 'obs.transition.trigger', label: 'Trigger transition' },
+  ],
+  Page: [
+    { value: 'page.goto', label: 'Open folder' },
+    { value: 'page.back', label: 'Back to parent' },
+  ],
+  System: [
+    { value: 'system.launch', label: 'Launch app' },
+    { value: 'system.open', label: 'Open URL/file' },
+    { value: 'system.shortcut', label: 'Keyboard shortcut' },
+    { value: 'system.shell', label: 'Run shell command' },
+  ],
+};
+
+const groupForAction = (type: Action['type']): ActionGroup => {
+  if (type.startsWith('obs.')) return 'OBS';
+  if (type.startsWith('page.')) return 'Page';
+  return 'System';
+};
 
 const defaultAction = (type: Action['type']): Action => {
   switch (type) {
@@ -44,21 +60,38 @@ const defaultAction = (type: Action['type']): Action => {
 
 export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange }: Props) => {
   const update = (value: Partial<Action>) => onChange({ ...action, ...value } as Action);
+  const actionGroup = groupForAction(action.type);
+  const options = actionGroups[actionGroup];
+  const selectAction = (type: Action['type']) => {
+    const nextAction = defaultAction(type);
+    if (nextAction.type === 'page.goto' && folders[0]) nextAction.pageId = folders[0].id;
+    onChange(nextAction);
+  };
 
   return (
     <div className="action-editor">
+      <label>
+        Action group
+        <select
+          aria-label="Action group"
+          value={actionGroup}
+          onChange={(event) => {
+            const nextGroup = event.target.value as ActionGroup;
+            const firstAction = actionGroups[nextGroup][0];
+            if (firstAction) selectAction(firstAction.value);
+          }}
+        >
+          {(Object.keys(actionGroups) as ActionGroup[]).map((group) => <option key={group} value={group}>{group}</option>)}
+        </select>
+      </label>
       <label>
         Action type
         <select
           aria-label="Action type"
           value={action.type}
-          onChange={(event) => {
-            const nextAction = defaultAction(event.target.value as Action['type']);
-            if (nextAction.type === 'page.goto' && folders[0]) nextAction.pageId = folders[0].id;
-            onChange(nextAction);
-          }}
+          onChange={(event) => selectAction(event.target.value as Action['type'])}
         >
-          {actionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       </label>
 

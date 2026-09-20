@@ -61,7 +61,7 @@ describe('page manager', () => {
 
     await user.click(screen.getByRole('button', { name: /edit free/i }));
 
-    expect(onEditPageGroup).toHaveBeenCalledWith('free');
+    expect(onEditPageGroup).toHaveBeenCalledWith('free', expect.any(HTMLElement));
   });
 
   it('moves the active page to its parent before deleting an open folder', async () => {

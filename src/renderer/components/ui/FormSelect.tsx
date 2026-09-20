@@ -1,4 +1,5 @@
 import { Children, forwardRef, isValidElement, useEffect, useId, useRef, useState, type ChangeEvent, type ReactNode, type SelectHTMLAttributes } from 'react';
+import { ChevronDown, Search } from 'lucide-react';
 import { controlClassName, type SharedControlProps } from './formTypes';
 
 export type FormSelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'color' | 'size'> & SharedControlProps & {
@@ -49,34 +50,38 @@ const SearchableSelect = forwardRef<HTMLSelectElement, FormSelectProps>(function
 
   return (
     <div ref={wrapperRef} className={`ui-select-searchable ui-control--${size ?? 'md'} ui-control--${color ?? 'default'}`}>
-      <input
-        id={props.id}
-        name={props.name}
-        disabled={props.disabled}
-        required={props.required}
-        autoComplete={props.autoComplete}
-        aria-label={props['aria-label']}
-        aria-labelledby={props['aria-labelledby']}
-        aria-describedby={props['aria-describedby']}
-        className={controlClassName('ui-input ui-select-search', size ?? 'md', color ?? 'default', className)}
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded={isOpen}
-        aria-controls={listboxId}
-        value={isOpen ? query : selectedOption?.label ?? ''}
-        onFocus={() => { setIsOpen(true); setQuery(''); }}
-        onChange={(event) => { setQuery(event.target.value); setIsOpen(true); }}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            setIsOpen(false);
-            setQuery('');
-          } else if (event.key === 'Enter' && visibleOptions.length === 1 && !visibleOptions[0]?.disabled) {
-            event.preventDefault();
-            selectOption(visibleOptions[0]!.value);
-          }
-        }}
-        style={style}
-      />
+      <div className="ui-select-search-field" data-open={isOpen}>
+        <input
+          id={props.id}
+          name={props.name}
+          disabled={props.disabled}
+          required={props.required}
+          autoComplete={props.autoComplete}
+          aria-label={props['aria-label']}
+          aria-labelledby={props['aria-labelledby']}
+          aria-describedby={props['aria-describedby']}
+          aria-haspopup="listbox"
+          className={controlClassName('ui-input ui-select-search', size ?? 'md', color ?? 'default', className)}
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+          aria-controls={listboxId}
+          value={isOpen ? query : selectedOption?.label ?? ''}
+          onFocus={() => { setIsOpen(true); setQuery(''); }}
+          onChange={(event) => { setQuery(event.target.value); setIsOpen(true); }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              setIsOpen(false);
+              setQuery('');
+            } else if (event.key === 'Enter' && visibleOptions.length === 1 && !visibleOptions[0]?.disabled) {
+              event.preventDefault();
+              selectOption(visibleOptions[0]!.value);
+            }
+          }}
+          style={style}
+        />
+        {isOpen ? <Search className="ui-select-search-icon" size={14} aria-hidden="true" /> : <ChevronDown className="ui-select-chevron" size={15} aria-hidden="true" />}
+      </div>
       <select {...props} ref={ref} className={controlClassName('ui-select ui-select-searchable-native', size ?? 'md', color ?? 'default')} value={selectedValue} onChange={onChange} tabIndex={-1} aria-hidden="true" style={{ ...style, display: 'none' }}>
         {children}
       </select>

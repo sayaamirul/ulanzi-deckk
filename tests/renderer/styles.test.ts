@@ -21,6 +21,8 @@ describe('renderer theme styles', () => {
     expect(styles).toContain('overflow: hidden;');
     expect(styles).toContain('.workspace-body');
     expect(styles).toContain('overflow: auto;');
+    expect(styles).toContain('.profile-toolbar-fields > input');
+    expect(styles).not.toContain('.profile-toolbar input');
     expect(styles).not.toContain('#7ee787');
 
     const toolbarStyles = styles.match(/\.profile-toolbar \{[^}]*\}/)?.[0] ?? '';

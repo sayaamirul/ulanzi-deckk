@@ -45,9 +45,11 @@ describe('form controls', () => {
     );
 
     const search = screen.getByRole('combobox', { name: 'Profile' });
+    expect(search.closest('.ui-select-search-field')).toHaveAttribute('data-open', 'false');
     expect(search).toHaveClass('profile-select');
     expect(search).toHaveStyle({ maxWidth: '220px' });
     await user.click(search);
+    expect(search.closest('.ui-select-search-field')).toHaveAttribute('data-open', 'true');
     await user.type(search, 'stu');
 
     expect(screen.getByRole('option', { name: 'Studio' })).toBeInTheDocument();

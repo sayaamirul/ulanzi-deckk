@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Profile } from '../../src/domain/profile/types';
+import { parseProfile } from '../../src/domain/profile/schema';
 import {
   createFolderPage,
   findFolderLinks,
@@ -68,5 +69,14 @@ describe('profile navigation helpers', () => {
     };
 
     expect(() => removeFolderPage(linked, 'apps')).toThrow(/main\/0_0/);
+  });
+
+  it('moves the active page to its parent when removing an unlinked folder', () => {
+    const activeFolder = { ...baseProfile, activePageId: 'apps' };
+
+    const removed = removeFolderPage(activeFolder, 'apps');
+
+    expect(removed.activePageId).toBe('main');
+    expect(() => parseProfile(removed)).not.toThrow();
   });
 });

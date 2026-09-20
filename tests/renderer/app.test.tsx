@@ -64,6 +64,22 @@ const folderSnapshotFixture: AppSnapshot = {
   },
 };
 
+const activeFolderSnapshotFixture: AppSnapshot = {
+  ...folderSnapshotFixture,
+  activePageId: 'apps',
+  profile: {
+    ...folderSnapshotFixture.profile,
+    activePageId: 'apps',
+    pages: folderSnapshotFixture.profile.pages.map((page) => page.id === 'main'
+      ? { ...page, slots: { '0_0': { id: '0_0', label: 'Stream', action: { type: 'obs.stream.toggle' } } } }
+      : page),
+  },
+  renderedPage: {
+    ...folderSnapshotFixture.renderedPage,
+    pageId: 'apps',
+  },
+};
+
 describe('profile editor', () => {
   afterEach(() => cleanup());
 
@@ -154,6 +170,7 @@ describe('profile editor', () => {
     await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
     await user.selectOptions(screen.getByLabelText('Action type'), 'page.goto');
     await user.selectOptions(screen.getByLabelText('Folder'), 'apps');
+    expect(screen.getByLabelText('Folder')).toHaveValue('apps');
     await user.click(screen.getByRole('button', { name: /save slot/i }));
 
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
@@ -164,6 +181,38 @@ describe('profile editor', () => {
         }),
       ]),
     }));
+  });
+
+  it('defaults a new folder action to the first available folder', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.selectOptions(screen.getByLabelText('Action type'), 'page.goto');
+
+    expect(screen.getByLabelText('Folder')).toHaveValue('apps');
+  });
+
+  it('opens an editor for an empty folder key and refreshes after deleting the open folder', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot
+      .mockResolvedValueOnce(activeFolderSnapshotFixture)
+      .mockResolvedValueOnce({
+        ...folderSnapshotFixture,
+        profile: { ...folderSnapshotFixture.profile, pages: [folderSnapshotFixture.profile.pages[0]] },
+        activePageId: 'main',
+        renderedPage: { ...folderSnapshotFixture.renderedPage, pageId: 'main' },
+      });
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    expect(screen.getByRole('button', { name: /save slot/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /cancel/i }));
+    await user.click(screen.getByRole('button', { name: /delete apps/i }));
+
+    expect(await screen.findByText('No folders yet.')).toBeInTheDocument();
+    expect(api.getSnapshot).toHaveBeenCalledTimes(2);
   });
 
   it('assigns a Back action without an extra field', async () => {

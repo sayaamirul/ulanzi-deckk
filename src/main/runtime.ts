@@ -1,6 +1,6 @@
 import type { Action } from '../domain/actions/types';
 import { parseProfile } from '../domain/profile/schema';
-import { isFolderPage } from '../domain/profile/navigation';
+import { isFolderPage, topLevelPages } from '../domain/profile/navigation';
 import { CONFIGURABLE_SLOT_IDS } from '../domain/profile/types';
 import type { Profile, RenderedPage } from '../domain/profile/types';
 import { ProfileEngine } from '../domain/profile/engine';
@@ -171,8 +171,9 @@ export class Runtime {
       return;
     }
 
-    const currentIndex = this.profile.pages.findIndex((page) => page.id === this.activePageId);
-    const previousPage = this.profile.pages[Math.max(0, currentIndex - 1)];
+    const pages = topLevelPages(this.profile);
+    const currentIndex = pages.findIndex((page) => page.id === this.activePageId);
+    const previousPage = pages[Math.max(0, currentIndex - 1)];
     if (previousPage) await this.selectPage(previousPage.id);
   }
 

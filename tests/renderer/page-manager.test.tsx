@@ -67,4 +67,22 @@ describe('page manager', () => {
       pages: expect.arrayContaining([expect.objectContaining({ id: 'free', name: 'Tools' })]),
     }));
   });
+
+  it('moves the active page to its parent before deleting an open folder', async () => {
+    const user = userEvent.setup();
+    const onSaveProfile = vi.fn(async () => undefined);
+    const activeProfile = {
+      ...profile,
+      activePageId: 'apps',
+      pages: profile.pages.map((page) => page.id === 'main' ? { ...page, slots: {} } : page),
+    };
+    render(<PageManager profile={activeProfile} activePageId="apps" onSaveProfile={onSaveProfile} onSelectPage={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: /delete apps/i }));
+
+    expect(onSaveProfile).toHaveBeenCalledWith(expect.objectContaining({
+      activePageId: 'main',
+      pages: expect.not.arrayContaining([expect.objectContaining({ id: 'apps' })]),
+    }));
+  });
 });

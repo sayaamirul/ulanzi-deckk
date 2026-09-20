@@ -46,5 +46,9 @@ export const removeFolderPage = (profile: Profile, folderPageId: string): Profil
     throw new Error(`folder is linked from ${locations}`);
   }
 
-  return { ...profile, pages: profile.pages.filter((candidate) => candidate.id !== folderPageId) };
+  return {
+    ...profile,
+    activePageId: profile.activePageId === folderPageId ? page.parentPageId! : profile.activePageId,
+    pages: profile.pages.filter((candidate) => candidate.id !== folderPageId),
+  };
 };

@@ -186,6 +186,7 @@ describe('runtime', () => {
       activePageId: 'other',
       pages: [
         { id: 'main', name: 'Main', slots: {} },
+        { id: 'apps', name: 'Apps', kind: 'folder', parentPageId: 'main', slots: {} },
         { id: 'other', name: 'Other', slots: { '0_0': { id: '0_0', label: 'Back', action: { type: 'page.back' } } } },
       ],
     };

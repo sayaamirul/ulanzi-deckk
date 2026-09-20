@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir } from 'node:fs/promises';
+import { mkdir, readFile, readdir, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseProfile } from '../domain/profile/schema';
 import type { Profile, ProfileSummary } from '../domain/profile/types';
@@ -8,6 +8,7 @@ export type ProfileCatalogStore = {
   list(): Promise<ProfileSummary[]>;
   load(id: string): Promise<Profile>;
   save(profile: Profile): Promise<void>;
+  remove(id: string): Promise<void>;
 };
 
 const profileIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
@@ -55,5 +56,14 @@ export class FileProfileCatalogStore implements ProfileCatalogStore {
   public async save(profile: Profile): Promise<void> {
     if (!profileIdPattern.test(profile.id)) throw new Error(`Invalid profile id: ${profile.id}`);
     await this.profileStore.save(join(this.directory, `${profile.id}.json`), profile);
+  }
+
+  public async remove(id: string): Promise<void> {
+    if (!profileIdPattern.test(id)) throw new Error(`Invalid profile id: ${id}`);
+    try {
+      await unlink(join(this.directory, `${id}.json`));
+    } catch (error) {
+      if (!(error instanceof Error && 'code' in error && (error as { code?: unknown }).code === 'ENOENT')) throw error;
+    }
   }
 }

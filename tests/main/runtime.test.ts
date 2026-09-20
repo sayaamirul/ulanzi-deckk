@@ -76,6 +76,10 @@ class FakeProfileCatalog {
     this.profiles.set(copy.id, copy);
     this.saves.push(copy);
   }
+
+  async remove(id: string): Promise<void> {
+    this.profiles.delete(id);
+  }
 }
 
 class FakePreferences {
@@ -177,6 +181,27 @@ describe('runtime', () => {
 
     expect(runtime.getSnapshot().activeProfileId).toBe('stream-control');
     expect(runtime.getSnapshot().profile.name).toBe('Stream Control');
+  });
+
+  it('removes a newly created profile when activation fails', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+    await runtime.start();
+    fakes.preferences.failSaves = true;
+
+    await expect(runtime.createProfile({ name: 'Ghost' })).rejects.toThrow(/preferences unavailable/i);
+
+    expect(fakes.profileCatalog.profiles.has('ghost')).toBe(false);
+    expect(runtime.getSnapshot().activeProfileId).toBe('stream-control');
+  });
+
+  it('does not require a redundant preference write for an ordinary save', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+    await runtime.start();
+    fakes.preferences.failSaves = true;
+
+    await runtime.saveProfile({ ...streamProfileFixture, name: 'Renamed' });
+
+    expect(runtime.getSnapshot().profile.name).toBe('Renamed');
   });
 
   it('creates fresh and duplicated profiles with isolated pages and slots', async () => {

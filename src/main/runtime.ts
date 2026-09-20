@@ -119,11 +119,12 @@ export class Runtime {
 
   async saveProfile(input: unknown): Promise<void> {
     const profile = parseProfile(input);
+    const previousProfileId = this.profile.id;
     await this.profileStore.save(profile);
     this.profile = profile;
     this.activePageId = profile.activePageId;
     await this.refreshProfiles();
-    await this.persistActiveProfileId(profile.id);
+    if (profile.id !== previousProfileId) await this.persistActiveProfileId(profile.id);
     this.lastError = undefined;
     await this.pushPage();
     this.publish();
@@ -170,7 +171,16 @@ export class Runtime {
     };
     await this.profileStore.save(profile);
     await this.refreshProfiles();
-    await this.selectProfile(id);
+    try {
+      await this.selectProfile(id);
+    } catch (error) {
+      try {
+        await this.profileStore.remove(id);
+      } finally {
+        await this.refreshProfiles();
+      }
+      throw error;
+    }
   }
 
   async selectPage(pageId: string): Promise<void> {

@@ -34,12 +34,16 @@ const App = () => {
   const addMenuRef = useRef<HTMLDivElement>(null);
   const addMenuItemRef = useRef<HTMLButtonElement>(null);
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
+  const userSelectedThemeRef = useRef(false);
+  const themeSaveRequestRef = useRef(0);
 
   useEffect(() => {
     let mounted = true;
     void api.getPreferences()
       .then((preferences) => {
-        if (mounted) setThemePreference(normalizeThemePreference(preferences.theme));
+        if (mounted && !userSelectedThemeRef.current) {
+          setThemePreference(normalizeThemePreference(preferences.theme));
+        }
       })
       .catch(() => undefined);
     return () => { mounted = false; };
@@ -114,12 +118,17 @@ const App = () => {
   };
   const connectObs = async () => { await api.connectObs({ url: 'ws://127.0.0.1:4455' }); };
   const saveThemePreference = async (nextTheme: ThemePreference) => {
+    const requestId = themeSaveRequestRef.current + 1;
+    themeSaveRequestRef.current = requestId;
+    userSelectedThemeRef.current = true;
     setThemePreference(nextTheme);
     setThemeSaveError(undefined);
     try {
       await api.savePreferences({ theme: nextTheme });
     } catch {
-      setThemeSaveError('Could not save your theme preference.');
+      if (themeSaveRequestRef.current === requestId) {
+        setThemeSaveError('Could not save your theme preference.');
+      }
     }
   };
   const returnToWorkspace = () => {
@@ -131,19 +140,10 @@ const App = () => {
     : undefined;
   const selectableFolders = !isFolderPage(page) ? folderPages(snapshot.profile, page.id) : [];
 
-  if (screen === 'settings') {
-    return (
-      <SettingsPage
-        theme={themePreference}
-        saveError={themeSaveError}
-        onThemeChange={(nextTheme) => { void saveThemePreference(nextTheme); }}
-        onBack={returnToWorkspace}
-      />
-    );
-  }
-
   return (
-    <main className="workspace-shell">
+    <>
+      <div hidden={screen === 'settings'} aria-hidden={screen === 'settings'}>
+        <main className="workspace-shell">
       <ProfileToolbar
         profileName={snapshot.profile.name}
         onNameChange={renameProfile}
@@ -205,7 +205,17 @@ const App = () => {
           onSubmit={(name) => { void savePageGroup(name); }}
         />
       )}
-    </main>
+        </main>
+      </div>
+      {screen === 'settings' && (
+        <SettingsPage
+          theme={themePreference}
+          saveError={themeSaveError}
+          onThemeChange={(nextTheme) => { void saveThemePreference(nextTheme); }}
+          onBack={returnToWorkspace}
+        />
+      )}
+    </>
   );
 };
 

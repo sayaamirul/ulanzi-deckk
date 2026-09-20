@@ -50,4 +50,18 @@ describe('application preferences', () => {
 
     await expect(store.load()).resolves.toEqual(DEFAULT_APP_PREFERENCES);
   });
+
+  it('serializes overlapping saves and persists the latest invocation', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ulanzi-preferences-'));
+    temporaryDirectories.push(directory);
+    const store = new FilePreferencesStore(join(directory, 'preferences.json'));
+
+    await Promise.all([
+      store.save({ theme: 'light' }),
+      store.save({ theme: 'dark' }),
+      store.save({ theme: 'system' }),
+    ]);
+
+    await expect(store.load()).resolves.toEqual({ theme: 'system' });
+  });
 });

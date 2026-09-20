@@ -30,6 +30,8 @@ const isMissingFileError = (error: unknown): boolean => (
 );
 
 export class FilePreferencesStore {
+  private writeQueue: Promise<void> = Promise.resolve();
+
   public constructor(private readonly path: string) {}
 
   public async load(): Promise<AppPreferences> {
@@ -49,10 +51,15 @@ export class FilePreferencesStore {
   }
 
   public async save(preferences: AppPreferences): Promise<void> {
-    await mkdir(dirname(this.path), { recursive: true });
-    const temporaryPath = `${this.path}.tmp`;
-    await writeFile(temporaryPath, `${JSON.stringify(normalizePreferences(preferences), null, 2)}\n`, 'utf8');
-    await rename(temporaryPath, this.path);
+    const write = async () => {
+      await mkdir(dirname(this.path), { recursive: true });
+      const temporaryPath = `${this.path}.tmp`;
+      await writeFile(temporaryPath, `${JSON.stringify(normalizePreferences(preferences), null, 2)}\n`, 'utf8');
+      await rename(temporaryPath, this.path);
+    };
+    const nextWrite = this.writeQueue.then(write, write);
+    this.writeQueue = nextWrite.catch(() => undefined);
+    await nextWrite;
   }
 }
 

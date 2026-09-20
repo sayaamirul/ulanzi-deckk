@@ -247,20 +247,62 @@ describe('profile editor', () => {
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({ name: 'Live Show' }));
   });
 
-  it('shows only normal pages in tabs and creates a folder under the active page', async () => {
+  it('shows only normal pages in tabs and keeps page groups in the sidebar', async () => {
     const user = userEvent.setup();
     api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
     render(<App />);
 
     expect(await screen.findByRole('button', { name: 'Main' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Apps' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Page and folder manager' })).toHaveTextContent('Page Groups');
+    expect(screen.getByRole('button', { name: /open apps/i })).toBeInTheDocument();
+  });
 
-    await user.type(screen.getByLabelText('Folder name'), 'Utilities');
-    await user.click(screen.getByRole('button', { name: /create folder/i }));
+  it('opens the add page group dialog from the layout card', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Add' }));
+    expect(screen.getByRole('menuitem', { name: 'Page Groups' })).toBeInTheDocument();
+    await user.click(screen.getByRole('menuitem', { name: 'Page Groups' }));
+
+    expect(screen.getByRole('dialog', { name: 'Add Page Group' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Page group name')).toBeInTheDocument();
+    expect(screen.getByLabelText('Page group name')).toHaveFocus();
+  });
+
+  it('creates a page group from the layout card dialog', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Add' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Page Groups' }));
+    await user.type(screen.getByLabelText('Page group name'), 'Utilities');
+    await user.click(screen.getByRole('button', { name: /create page group/i }));
 
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
       pages: expect.arrayContaining([
         expect.objectContaining({ name: 'Utilities', kind: 'folder', parentPageId: 'main' }),
+      ]),
+    }));
+  });
+
+  it('edits a page group from its sidebar card dialog', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: /edit apps/i }));
+    expect(screen.getByRole('dialog', { name: 'Edit Page Group' })).toBeInTheDocument();
+    await user.clear(screen.getByLabelText('Page group name'));
+    await user.type(screen.getByLabelText('Page group name'), 'Applications');
+    await user.click(screen.getByRole('button', { name: /save page group/i }));
+
+    expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
+      pages: expect.arrayContaining([
+        expect.objectContaining({ id: 'apps', name: 'Applications' }),
       ]),
     }));
   });
@@ -317,7 +359,7 @@ describe('profile editor', () => {
     await user.click(screen.getByRole('button', { name: /cancel/i }));
     await user.click(screen.getByRole('button', { name: /delete apps/i }));
 
-    expect(await screen.findByText('No folders yet.')).toBeInTheDocument();
+    expect(await screen.findByText('No page groups yet.')).toBeInTheDocument();
     expect(api.getSnapshot).toHaveBeenCalledTimes(2);
   });
 

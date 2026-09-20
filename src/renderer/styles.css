@@ -44,6 +44,14 @@ body {
   gap: 8px;
 }
 
+.panel-heading-actions,
+.page-group-actions,
+.page-group-dialog-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
 .profile-toolbar {
   border-bottom: 1px solid #292d39;
   padding-bottom: 24px;
@@ -121,6 +129,35 @@ body {
   margin: 0;
 }
 
+.page-group-add-button {
+  color: #7ee787;
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.page-group-add-menu {
+  position: relative;
+}
+
+.page-group-menu {
+  background: #202532;
+  border: 1px solid #41495c;
+  border-radius: 10px;
+  display: grid;
+  min-width: 150px;
+  padding: 5px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 4;
+}
+
+.page-group-menu button {
+  border: 0;
+  text-align: left;
+  white-space: nowrap;
+}
+
 .page-tabs {
   display: flex;
   align-items: center;
@@ -141,35 +178,56 @@ body {
   margin: 0;
 }
 
-.folder-create,
-.folder-row {
-  align-items: end;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+.page-manager-heading .muted {
+  font-size: 0.85rem;
+  margin: 8px 0 0;
 }
 
-.folder-create label {
-  color: #a7adbd;
+.page-group-list {
   display: grid;
-  flex: 1 1 220px;
-  gap: 7px;
-  font-size: 0.8rem;
+  gap: 10px;
+  margin-top: 18px;
 }
 
-.folder-create input,
-.folder-row input {
+.page-group-card {
   background: #10131a;
   border: 1px solid #303646;
-  border-radius: 8px;
-  color: #f6f7fb;
-  min-width: 0;
-  padding: 10px;
+  border-radius: 12px;
+  padding: 13px;
 }
 
-.folder-row input {
-  flex: 1 1 150px;
+.page-group-card-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.page-group-card h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.page-group-card .muted {
+  font-size: 0.75rem;
+  margin: 5px 0 0;
+}
+
+.icon-button {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  padding: 7px;
+}
+
+.icon-button svg {
+  height: 16px;
+  width: 16px;
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .folder-warning {
@@ -315,6 +373,63 @@ h1 {
   color: #a7adbd;
   font-size: 1.05rem;
   margin: 24px 0 0;
+}
+
+.page-group-dialog {
+  background: #171a22;
+  border: 1px solid #41495c;
+  border-radius: 16px;
+  color: #f6f7fb;
+  max-width: calc(100vw - 32px);
+  width: 420px;
+}
+
+.page-group-dialog-backdrop {
+  align-items: center;
+  background: rgb(7 9 13 / 72%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 10;
+}
+
+.page-group-dialog-content {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+}
+
+.page-group-dialog-heading {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.page-group-dialog-heading h2 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.page-group-dialog-content label {
+  color: #a7adbd;
+  display: grid;
+  font-size: 0.8rem;
+  gap: 7px;
+}
+
+.page-group-dialog-content input {
+  background: #10131a;
+  border: 1px solid #303646;
+  border-radius: 8px;
+  color: #f6f7fb;
+  min-width: 0;
+  padding: 10px;
+}
+
+.page-group-dialog-actions {
+  justify-content: flex-end;
 }
 
 @media (max-width: 900px) {

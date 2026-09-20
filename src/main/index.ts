@@ -11,6 +11,8 @@ import { registerIpc } from './ipc';
 import { Runtime } from './runtime';
 import { createTray } from './tray';
 
+app.disableHardwareAcceleration();
+
 const createWindow = (): BrowserWindow => {
   const window = new BrowserWindow({
     width: 1180,
@@ -18,9 +20,10 @@ const createWindow = (): BrowserWindow => {
     minWidth: 900,
     minHeight: 640,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: false,
     },
   });
 

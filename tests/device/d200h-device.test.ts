@@ -93,6 +93,62 @@ describe('D200H device', () => {
     await device.disconnect();
   });
 
+  it('sends the firmware clock handshake with an HH:MM:SS value', async () => {
+    const transport = autoHandshake();
+    const device = new D200HDevice(transport);
+
+    await device.connect();
+
+    const handshake = transport.writes.find(({ command }) => command === 0x0006);
+    expect(handshake?.payload.toString('ascii')).toMatch(/^1\|2\|9\|\d{2}:\d{2}:\d{2}\|1\|24H$/);
+    await device.disconnect();
+  });
+
+  it('settles the input channel after device info before uploading the first page', async () => {
+    vi.useFakeTimers();
+    try {
+      const transport = new FakeHidTransport();
+      transport.onWrite = (report, fake) => {
+        if (report.readUInt16BE(2) === 0x0006) fake.emitFrame(0x0303, Buffer.from('{}'));
+        if (report.readUInt16BE(2) === 0x0001) fake.emitFrame(0x010b);
+      };
+      const device = new D200HDevice(transport, [], { handshakeSettleMs: 250 });
+      const connection = device.connect();
+      await Promise.resolve();
+
+      expect(transport.writes.some(({ command }) => command === 0x0001)).toBe(false);
+      await vi.advanceTimersByTimeAsync(249);
+      expect(transport.writes.some(({ command }) => command === 0x0001)).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.waitFor(() => expect(transport.writes.some(({ command }) => command === 0x0001)).toBe(true));
+      await connection;
+
+      expect(transport.writes.some(({ command }) => command === 0x0001)).toBe(true);
+      await device.disconnect();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('accepts a heartbeat as proof of an already-active warm device session', async () => {
+    const transport = new FakeHidTransport();
+    transport.onWrite = (report, fake) => {
+      const command = report.readUInt16BE(2);
+      if (command === 0x0006) fake.emitFrame(0x0103);
+      if (command === 0x0001) fake.emitFrame(0x010b);
+    };
+    const device = new D200HDevice(transport, [], {
+      handshakeTimeoutMs: 25,
+      handshakeSettleMs: 0,
+    });
+
+    await device.connect();
+
+    expect(transport.operations).toContain('read:0103');
+    expect(transport.operations).toContain('write:0001');
+    await device.disconnect();
+  });
+
   it('times out while waiting for device info', async () => {
     vi.useFakeTimers();
     try {
@@ -115,7 +171,7 @@ describe('D200H device', () => {
       transport.onWrite = (report, fake) => {
         if (report.readUInt16BE(2) === 0x0006) fake.emitFrame(0x0303, Buffer.from('{}'));
       };
-      const device = new D200HDevice(transport, [], { archiveAckTimeoutMs: 25 });
+      const device = new D200HDevice(transport, [], { archiveAckTimeoutMs: 25, handshakeSettleMs: 0 });
       const connection = device.connect();
       const rejection = expect(connection).rejects.toThrow('Timed out waiting for D200H page acknowledgement');
       await vi.waitFor(() => expect(transport.operations).toContain('write:0001'));

@@ -65,4 +65,12 @@ describe('Node HID transport', () => {
     ]));
     await transport.close();
   });
+
+  it('uses bounded reads so pending writes are not starved by node-hid', async () => {
+    const transport = await NodeHidTransport.open(descriptor);
+
+    expect(mocks.device.read).toHaveBeenCalledWith(50);
+
+    await transport.close();
+  });
 });

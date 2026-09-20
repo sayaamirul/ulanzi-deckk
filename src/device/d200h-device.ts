@@ -16,6 +16,7 @@ type EventWaiter = {
 
 type D200HDeviceOptions = {
   handshakeTimeoutMs?: number;
+  handshakeSettleMs?: number;
   archiveAckTimeoutMs?: number;
   keepaliveIntervalMs?: number;
   setTimeout?: (callback: () => void, delayMs: number) => ReturnType<typeof setTimeout>;
@@ -32,6 +33,7 @@ export class D200HDevice {
   private readonly waiters = new Map<WaitableEventKind, EventWaiter>();
   private slots: RenderedSlot[];
   private readonly handshakeTimeoutMs: number;
+  private readonly handshakeSettleMs: number;
   private readonly archiveAckTimeoutMs: number;
   private readonly keepaliveIntervalMs: number;
   private readonly setTimeoutFn: NonNullable<D200HDeviceOptions['setTimeout']>;
@@ -51,6 +53,7 @@ export class D200HDevice {
   ) {
     this.slots = initialSlots;
     this.handshakeTimeoutMs = options.handshakeTimeoutMs ?? 5_000;
+    this.handshakeSettleMs = options.handshakeSettleMs ?? 250;
     this.archiveAckTimeoutMs = options.archiveAckTimeoutMs ?? 5_000;
     this.keepaliveIntervalMs = options.keepaliveIntervalMs ?? 2_000;
     this.setTimeoutFn = options.setTimeout ?? setTimeout;
@@ -66,6 +69,7 @@ export class D200HDevice {
     const deviceInfo = this.waitForEvent('device-info', this.handshakeTimeoutMs);
     await this.transport.write(encodeFrame(0x0006, this.clockPayload()));
     await deviceInfo;
+    await this.delay(this.handshakeSettleMs);
     await this.enqueueUpload(this.slots);
     this.connected = true;
     this.startKeepalive();
@@ -118,6 +122,12 @@ export class D200HDevice {
           this.waiters.delete(frame.event.kind);
           waiter.resolve();
         }
+      } else if (frame.event?.kind === 'heartbeat') {
+        const waiter = this.waiters.get('device-info');
+        if (waiter) {
+          this.waiters.delete('device-info');
+          waiter.resolve();
+        }
       }
       if (frame.event?.kind !== 'button' || frame.event.index > 12) return;
       const event: ButtonEvent = { index: frame.event.index, pressed: frame.event.pressed };
@@ -128,7 +138,11 @@ export class D200HDevice {
   }
 
   private clockPayload(): Buffer {
-    return Buffer.from(`1|2|9|${Math.floor(Date.now() / 1000)}|1|24H`, 'ascii');
+    const now = new Date();
+    const time = [now.getHours(), now.getMinutes(), now.getSeconds()]
+      .map((value) => String(value).padStart(2, '0'))
+      .join(':');
+    return Buffer.from(`1|2|9|${time}|1|24H`, 'ascii');
   }
 
   private enqueueUpload(slots: RenderedSlot[]): Promise<void> {
@@ -175,6 +189,12 @@ export class D200HDevice {
           reject(error);
         },
       });
+    });
+  }
+
+  private delay(delayMs: number): Promise<void> {
+    return new Promise((resolve) => {
+      this.setTimeoutFn(resolve, delayMs);
     });
   }
 

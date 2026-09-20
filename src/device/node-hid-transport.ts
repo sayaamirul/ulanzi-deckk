@@ -62,7 +62,7 @@ export class NodeHidTransport implements HidTransport {
   private async readLoop(): Promise<void> {
     while (!this.closed) {
       try {
-        const data = await this.device.read();
+        const data = await this.device.read(50);
         if (data && !this.closed) this.listener?.(Buffer.from(data));
       } catch (error) {
         if (!this.closed) {

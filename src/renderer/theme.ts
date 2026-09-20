@@ -28,17 +28,26 @@ export const subscribeToSystemTheme = (
 ): (() => void) => {
   if (preference !== 'system') return () => undefined;
 
+  if (typeof window.matchMedia !== 'function') {
+    listener(true);
+    return () => undefined;
+  }
+
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
   const handleChange = (event: MediaQueryListEvent) => listener(event.matches);
   listener(mediaQuery.matches);
 
-  if ('addEventListener' in mediaQuery) {
+  if (typeof mediaQuery.addEventListener === 'function') {
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }
 
-  mediaQuery.addListener(handleChange);
-  return () => mediaQuery.removeListener(handleChange);
+  const legacyMediaQuery = mediaQuery as MediaQueryList & {
+    addListener: (listener: (event: MediaQueryListEvent) => void) => void;
+    removeListener: (listener: (event: MediaQueryListEvent) => void) => void;
+  };
+  legacyMediaQuery.addListener(handleChange);
+  return () => legacyMediaQuery.removeListener(handleChange);
 };
 
 export type { ThemePreference };

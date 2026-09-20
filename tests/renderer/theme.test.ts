@@ -10,14 +10,17 @@ import {
 type MediaListener = (event: MediaQueryListEvent) => void;
 
 const createMediaQueryList = (matches: boolean) => {
+  let currentMatches = matches;
   const listeners = new Set<MediaListener>();
   const media = {
-    matches,
+    get matches() {
+      return currentMatches;
+    },
     media: '(prefers-color-scheme: dark)',
     addEventListener: vi.fn((_type: string, listener: MediaListener) => listeners.add(listener)),
     removeEventListener: vi.fn((_type: string, listener: MediaListener) => listeners.delete(listener)),
     dispatch(nextMatches: boolean) {
-      media.matches = nextMatches;
+      currentMatches = nextMatches;
       listeners.forEach((listener) => listener({ matches: nextMatches } as MediaQueryListEvent));
     },
   } as unknown as MediaQueryList & { dispatch: (nextMatches: boolean) => void };
@@ -80,5 +83,13 @@ describe('theme controller', () => {
 
     unsubscribe();
     expect(media.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+  });
+
+  it('keeps the safe dark fallback when matchMedia is unavailable', () => {
+    Object.defineProperty(window, 'matchMedia', { configurable: true, value: undefined });
+    const listener = vi.fn();
+
+    expect(() => subscribeToSystemTheme('system', listener)).not.toThrow();
+    expect(listener).toHaveBeenCalledWith(true);
   });
 });

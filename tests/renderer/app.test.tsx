@@ -44,6 +44,8 @@ const api = {
   dispatchSlot: vi.fn(async () => undefined),
   connectObs: vi.fn(async () => undefined),
   setBrightness: vi.fn(async () => undefined),
+  getPreferences: vi.fn(async () => ({ theme: 'system' as const })),
+  savePreferences: vi.fn(async () => undefined),
 };
 
 const folderSnapshotFixture: AppSnapshot = {
@@ -81,12 +83,72 @@ const activeFolderSnapshotFixture: AppSnapshot = {
 };
 
 describe('profile editor', () => {
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    delete document.documentElement.dataset.theme;
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
     api.getSnapshot.mockResolvedValue(streamSnapshotFixture);
+    api.getPreferences.mockResolvedValue({ theme: 'system' });
+    api.savePreferences.mockResolvedValue(undefined);
     Object.defineProperty(window, 'ulanzi', { configurable: true, value: api });
+  });
+
+  it('opens the Settings screen from the toolbar', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Build your stream surface' })).not.toBeInTheDocument();
+  });
+
+  it('shows Auto selected with Light, Dark, and Auto theme choices', async () => {
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('radio', { name: /light/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /dark/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /auto/i })).toBeChecked();
+  });
+
+  it('applies and persists a selected theme immediately', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+
+    await user.click(screen.getByRole('radio', { name: /light/i }));
+
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(api.savePreferences).toHaveBeenCalledWith({ theme: 'light' });
+  });
+
+  it('returns to the workspace and restores focus to the Settings trigger', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const settingsButton = await screen.findByRole('button', { name: 'Settings' });
+    await user.click(settingsButton);
+    await user.click(screen.getByRole('button', { name: /back to workspace/i }));
+
+    expect(screen.getByRole('heading', { name: 'Build your stream surface' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Settings' })).toHaveFocus();
+  });
+
+  it('keeps the selected theme and reports a persistence error', async () => {
+    const user = userEvent.setup();
+    api.savePreferences.mockRejectedValueOnce(new Error('disk full'));
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('radio', { name: /light/i }));
+
+    expect(screen.getByRole('radio', { name: /light/i })).toBeChecked();
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not save/i);
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
   });
 
   it('shows all thirteen configurable D200H slots', async () => {

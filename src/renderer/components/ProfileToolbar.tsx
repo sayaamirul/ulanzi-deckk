@@ -45,12 +45,6 @@ export const ProfileToolbar = ({
       <div className="profile-toolbar-main">
         <p className="eyebrow">STREAM PROFILE</p>
         <div className="profile-toolbar-fields">
-          <label>
-            <span className="sr-only">Profile</span>
-            <select aria-label="Profile" aria-describedby="profile-switch-note" value={activeProfileId} onChange={(event) => onSelectProfile(event.target.value)}>
-              {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
-            </select>
-          </label>
           <input aria-label="Profile name" value={profileName} onChange={(event) => onNameChange(event.target.value)} />
           <button className="primary-button" type="button" onClick={onSave}>Save profile</button>
           <div className="profile-actions-menu" ref={profileMenuRef}>
@@ -66,6 +60,12 @@ export const ProfileToolbar = ({
         <p id="profile-switch-note" className="profile-toolbar-note">Switching profiles uses saved changes.</p>
       </div>
       <div className="toolbar-actions">
+        <label className="profile-toolbar-active-profile">
+          <span className="sr-only">Profile</span>
+          <select aria-label="Profile" aria-describedby="profile-switch-note" value={activeProfileId} onChange={(event) => onSelectProfile(event.target.value)}>
+            {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+          </select>
+        </label>
         <ConnectionStatus className="connection-status-compact" device={device} obs={obs} />
       </div>
     </header>

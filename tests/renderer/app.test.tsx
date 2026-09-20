@@ -120,10 +120,12 @@ describe('profile editor', () => {
 
     const toolbar = await screen.findByRole('banner');
     const status = within(toolbar).getByLabelText('Connection status');
+    const profileSelect = within(toolbar).getByRole('combobox', { name: 'Profile' });
     const profileName = within(toolbar).getByLabelText('Profile name');
     const save = within(toolbar).getByRole('button', { name: 'Save profile' });
 
     expect(toolbar).toContainElement(status);
+    expect(status.parentElement).toContainElement(profileSelect);
     expect(toolbar).toContainElement(save);
     expect(profileName.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(toolbar).queryByRole('button', { name: 'Connect OBS' })).not.toBeInTheDocument();
@@ -142,8 +144,8 @@ describe('profile editor', () => {
 
     expect(connectButton).toHaveAttribute('title', 'Connect OBS');
     expect(settingsButton).toHaveAttribute('title', 'Settings');
-    expect(connectButton.querySelector('svg')).toBeInTheDocument();
-    expect(settingsButton.querySelector('svg')).toBeInTheDocument();
+    expect(connectButton.querySelector('.lucide-cable')).toBeInTheDocument();
+    expect(settingsButton.querySelector('.lucide-settings')).toBeInTheDocument();
     await user.click(connectButton);
     expect(api.connectObs).toHaveBeenCalledWith({ url: 'ws://127.0.0.1:4455' });
   });

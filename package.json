@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "jszip": "^3.10.1",
+    "lucide-react": "^1.47.0",
     "node-hid": "^3.2.0",
     "obs-websocket-js": "^5.0.6",
     "react": "^19.1.1",

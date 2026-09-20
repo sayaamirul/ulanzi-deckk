@@ -1,4 +1,5 @@
 import type { Page, Profile } from '../../domain/profile/types';
+import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import {
   findFolderLinks,
   folderPages,
@@ -22,30 +23,6 @@ type FolderRowProps = {
   onDelete: (pageId: string) => void;
 };
 
-const OpenIcon = () => (
-  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M14 4h6v6" />
-    <path d="m20 4-9 9" />
-    <path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
-  </svg>
-);
-
-const EditIcon = () => (
-  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M12 20h9" />
-    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
-  </svg>
-);
-
-const DeleteIcon = () => (
-  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M4 7h16" />
-    <path d="M10 11v6M14 11v6" />
-    <path d="m6 7 1 13h10l1-13" />
-    <path d="M9 7V4h6v3" />
-  </svg>
-);
-
 const FolderRow = ({ folder, links, onOpen, onEdit, onDelete }: FolderRowProps) => (
   <article className="page-group-card">
     <div className="page-group-card-header">
@@ -55,10 +32,10 @@ const FolderRow = ({ folder, links, onOpen, onEdit, onDelete }: FolderRowProps) 
       </div>
       <div className="page-group-actions">
         <button className="icon-button" type="button" aria-label={`Open ${folder.name}`} title={`Open ${folder.name}`} onClick={() => onOpen(folder.id)}>
-          <OpenIcon />
+          <ExternalLink aria-hidden="true" />
         </button>
         <button className="icon-button" type="button" aria-label={`Edit ${folder.name}`} title={`Edit ${folder.name}`} onClick={(event) => onEdit(folder.id, event.currentTarget)}>
-          <EditIcon />
+          <Pencil aria-hidden="true" />
         </button>
         <button
           className="icon-button"
@@ -68,7 +45,7 @@ const FolderRow = ({ folder, links, onOpen, onEdit, onDelete }: FolderRowProps) 
           disabled={links.length > 0}
           onClick={() => onDelete(folder.id)}
         >
-          <DeleteIcon />
+          <Trash2 aria-hidden="true" />
         </button>
       </div>
     </div>

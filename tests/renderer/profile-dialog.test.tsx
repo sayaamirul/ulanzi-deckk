@@ -47,6 +47,7 @@ describe('ProfileDialog', () => {
 
     expect(screen.getByRole('heading', { name: 'Duplicate Profile' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Profile name' })).toHaveValue('Stream Control');
+    expect(screen.getByRole('button', { name: 'Close dialog' }).querySelector('.lucide-x')).toBeInTheDocument();
     await user.keyboard('{Escape}');
 
     expect(onClose).toHaveBeenCalledTimes(1);

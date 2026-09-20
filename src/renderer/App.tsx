@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Plus } from 'lucide-react';
 import type { Slot, SlotId } from '../domain/profile/types';
 import { createFolderPage, folderPages, isFolderPage, topLevelPages } from '../domain/profile/navigation';
 import type { Profile } from '../domain/profile/types';
@@ -209,7 +210,7 @@ const App = () => {
             <div className="panel-heading-actions">
               <span className="panel-meta">13 programmable keys</span>
               <div ref={addMenuRef} className="page-group-add-menu">
-                <button ref={pageGroupAddButtonRef} className="icon-button page-group-add-button" type="button" aria-label="Add" title="Add" aria-expanded={isAddMenuOpen} onClick={() => setIsAddMenuOpen((open) => !open)}>+</button>
+                <button ref={pageGroupAddButtonRef} className="icon-button page-group-add-button" type="button" aria-label="Add" title="Add" aria-expanded={isAddMenuOpen} onClick={() => setIsAddMenuOpen((open) => !open)}><Plus aria-hidden="true" /></button>
                 {isAddMenuOpen && (
                   <div
                     className="page-group-menu"

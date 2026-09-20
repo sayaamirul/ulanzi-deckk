@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 
 type Props = {
   mode: 'create' | 'edit';
@@ -13,12 +14,6 @@ export const PageGroupDialog = ({ mode, initialName = '', returnFocusRef, onClos
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const title = mode === 'create' ? 'Add Page Group' : 'Edit Page Group';
-  const CloseIcon = () => (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="m6 6 12 12M18 6 6 18" />
-    </svg>
-  );
-
   useEffect(() => {
     const dialog = dialogRef.current;
     const previousFocus = returnFocusRef?.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : undefined);
@@ -78,7 +73,7 @@ export const PageGroupDialog = ({ mode, initialName = '', returnFocusRef, onClos
               <p className="eyebrow">PAGE GROUPS</p>
               <h2 id="page-group-dialog-title">{title}</h2>
             </div>
-            <button className="icon-button" type="button" aria-label="Close dialog" title="Close" onClick={onClose}><CloseIcon /></button>
+            <button className="icon-button" type="button" aria-label="Close dialog" title="Close" onClick={onClose}><X aria-hidden="true" /></button>
           </div>
           <label>
             Page group name

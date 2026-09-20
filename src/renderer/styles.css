@@ -162,7 +162,8 @@ button:disabled {
 }
 
 .profile-toolbar-fields,
-.profile-toolbar-fields label {
+.profile-toolbar-fields label,
+.profile-toolbar-active-profile {
   align-items: center;
   display: flex;
   gap: 8px;
@@ -179,7 +180,8 @@ button:disabled {
   margin: 6px 0 0;
 }
 
-.profile-toolbar-fields select {
+.profile-toolbar-fields select,
+.profile-toolbar-active-profile select {
   background: var(--color-surface-muted);
   border: 1px solid var(--color-control-border);
   border-radius: 4px;
@@ -221,6 +223,8 @@ button:disabled {
   align-items: center;
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .panel-heading-actions,

@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { Copy, Ellipsis, Plus } from 'lucide-react';
 import type { ProfileSummary } from '../../domain/profile/types';
 import type { DeviceRuntimeState, ObsRuntimeState } from '../../domain/state/types';
 import { ConnectionStatus } from './ConnectionStatus';
+import { FormButton } from './ui/FormButton';
+import { FormInput } from './ui/FormInput';
+import { FormSelect } from './ui/FormSelect';
 
 type Props = {
   profileName: string;
@@ -45,28 +49,28 @@ export const ProfileToolbar = ({
       <div className="profile-toolbar-main">
         <p className="eyebrow">STREAM PROFILE</p>
         <div className="profile-toolbar-fields">
-          <input aria-label="Profile name" value={profileName} onChange={(event) => onNameChange(event.target.value)} />
-          <button className="primary-button" type="button" onClick={onSave}>Save profile</button>
-          <div className="profile-actions-menu" ref={profileMenuRef}>
-            <button type="button" aria-label="Profile actions" aria-expanded={isProfileMenuOpen} onClick={() => setIsProfileMenuOpen((open) => !open)}>Profile actions</button>
-            {isProfileMenuOpen && (
-              <div className="profile-menu" role="menu">
-                <button role="menuitem" type="button" onClick={() => { setIsProfileMenuOpen(false); onCreateProfile(); }}>New profile</button>
-                <button role="menuitem" type="button" onClick={() => { setIsProfileMenuOpen(false); onDuplicateProfile(); }}>Duplicate profile</button>
-              </div>
-            )}
-          </div>
+          <FormInput aria-label="Profile name" value={profileName} onChange={(event) => onNameChange(event.target.value)} />
+          <FormButton className="primary-button" variant="solid" color="accent" type="button" onClick={onSave}>Save profile</FormButton>
         </div>
         <p id="profile-switch-note" className="profile-toolbar-note">Switching profiles uses saved changes.</p>
       </div>
       <div className="toolbar-actions">
+        <ConnectionStatus className="connection-status-compact" device={device} obs={obs} />
         <label className="profile-toolbar-active-profile">
           <span className="sr-only">Profile</span>
-          <select aria-label="Profile" aria-describedby="profile-switch-note" value={activeProfileId} onChange={(event) => onSelectProfile(event.target.value)}>
+          <FormSelect searchable size="sm" aria-label="Profile" aria-describedby="profile-switch-note" value={activeProfileId} onChange={(event) => onSelectProfile(event.target.value)}>
             {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
-          </select>
+          </FormSelect>
         </label>
-        <ConnectionStatus className="connection-status-compact" device={device} obs={obs} />
+        <div className="profile-actions-menu" ref={profileMenuRef}>
+          <FormButton className="icon-button" variant="icon" type="button" aria-label="Profile actions" title="Profile actions" aria-expanded={isProfileMenuOpen} onClick={() => setIsProfileMenuOpen((open) => !open)}><Ellipsis aria-hidden="true" /></FormButton>
+          {isProfileMenuOpen && (
+            <div className="profile-menu" role="menu">
+                <FormButton role="menuitem" type="button" onClick={() => { setIsProfileMenuOpen(false); onCreateProfile(); }}><Plus aria-hidden="true" /> <span>New profile</span></FormButton>
+                <FormButton role="menuitem" type="button" onClick={() => { setIsProfileMenuOpen(false); onDuplicateProfile(); }}><Copy aria-hidden="true" /> <span>Duplicate profile</span></FormButton>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

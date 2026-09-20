@@ -114,6 +114,125 @@ button:disabled {
   opacity: 0.5;
 }
 
+.ui-input,
+.ui-select {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-control-border);
+  border-radius: 4px;
+  color: var(--color-text);
+}
+
+.ui-select-searchable {
+  min-width: 0;
+  position: relative;
+}
+
+.ui-select-search {
+  width: 100%;
+}
+
+.ui-select-menu {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0;
+  display: grid;
+  gap: 2px;
+  left: 0;
+  max-height: 240px;
+  min-width: 100%;
+  overflow-y: auto;
+  padding: 4px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 6;
+}
+
+.ui-select-menu button {
+  border: 0;
+  min-width: max-content;
+  text-align: left;
+  width: 100%;
+}
+
+.ui-select-menu button.is-selected {
+  background: var(--color-slot-active);
+  color: var(--color-text);
+}
+
+.ui-select-empty {
+  color: var(--color-text-muted);
+  padding: 7px 8px;
+  white-space: nowrap;
+}
+
+.ui-control--sm {
+  font-size: 0.8rem;
+  min-height: 30px;
+  padding: 5px 8px;
+}
+
+.ui-control--md {
+  font-size: 0.9rem;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.ui-control--lg {
+  font-size: 1rem;
+  min-height: 40px;
+  padding: 9px 14px;
+}
+
+.ui-control--accent {
+  border-color: var(--color-accent);
+}
+
+.ui-control--danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.ui-control--success {
+  border-color: var(--color-success-border);
+  color: var(--color-success);
+}
+
+.ui-button {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.ui-button--solid.ui-control--accent {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-weight: 700;
+}
+
+.ui-button--solid.ui-control--success {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-bg);
+  font-weight: 700;
+}
+
+.ui-button--outline {
+  background: transparent;
+}
+
+.ui-button--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.ui-button--icon {
+  min-width: 34px;
+  padding-inline: 7px;
+}
+
 .app-shell,
 .workspace-shell {
   height: 100vh;
@@ -190,6 +309,11 @@ button:disabled {
   padding: 6px 8px;
 }
 
+.profile-toolbar-active-profile .ui-select-searchable {
+  max-width: 210px;
+  width: min(22vw, 210px);
+}
+
 .profile-toolbar-fields input {
   min-width: 130px;
   width: min(22vw, 260px);
@@ -214,9 +338,23 @@ button:disabled {
 }
 
 .profile-menu button {
+  align-items: center;
   border: 0;
+  display: flex;
+  gap: 8px;
   text-align: left;
   white-space: nowrap;
+}
+
+.profile-menu button svg {
+  flex: 0 0 auto;
+  height: 16px;
+  width: 16px;
+}
+
+.toolbar-actions .profile-menu {
+  left: auto;
+  right: 0;
 }
 
 .toolbar-actions {
@@ -537,7 +675,6 @@ button:disabled {
   outline-offset: 2px;
 }
 
-.slot-id,
 .slot-number {
   color: var(--color-text-subtle);
   font-size: 0.75rem;
@@ -545,6 +682,10 @@ button:disabled {
 
 .slot-editor {
   align-self: start;
+}
+
+.action-editor-title.is-editing {
+  color: var(--color-accent);
 }
 
 .empty-action-card {

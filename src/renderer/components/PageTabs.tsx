@@ -1,4 +1,5 @@
 import type { Page } from '../../domain/profile/types';
+import { FormButton } from './ui/FormButton';
 
 type Props = {
   pages: Page[];
@@ -9,7 +10,7 @@ type Props = {
 export const PageTabs = ({ pages, activePageId, onSelect }: Props) => (
   <nav className="page-tabs" aria-label="Profile pages">
     {pages.map((page) => (
-      <button
+      <FormButton
         className={[
           'page-tab',
           page.id === activePageId ? 'is-active' : '',
@@ -20,7 +21,7 @@ export const PageTabs = ({ pages, activePageId, onSelect }: Props) => (
         onClick={() => onSelect(page.id)}
       >
         {page.name}
-      </button>
+      </FormButton>
     ))}
   </nav>
 );

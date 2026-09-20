@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { FormButton } from './ui/FormButton';
+import { FormInput } from './ui/FormInput';
 
 type Props = {
   mode: 'create' | 'edit';
@@ -73,17 +75,17 @@ export const PageGroupDialog = ({ mode, initialName = '', returnFocusRef, onClos
               <p className="eyebrow">PAGE GROUPS</p>
               <h2 id="page-group-dialog-title">{title}</h2>
             </div>
-            <button className="icon-button" type="button" aria-label="Close dialog" title="Close" onClick={onClose}><X aria-hidden="true" /></button>
+            <FormButton className="icon-button" variant="icon" type="button" aria-label="Close dialog" title="Close" onClick={onClose}><X aria-hidden="true" /></FormButton>
           </div>
           <label>
             Page group name
-            <input ref={inputRef} aria-label="Page group name" value={name} onChange={(event) => setName(event.target.value)} />
+            <FormInput ref={inputRef} aria-label="Page group name" value={name} onChange={(event) => setName(event.target.value)} />
           </label>
           <div className="page-group-dialog-actions">
-            <button type="button" onClick={onClose}>Cancel</button>
-            <button className="primary-button" type="submit" disabled={!name.trim()}>
+            <FormButton type="button" onClick={onClose}>Cancel</FormButton>
+            <FormButton className="primary-button" variant="solid" color="accent" type="submit" disabled={!name.trim()}>
               {mode === 'create' ? 'Create page group' : 'Save page group'}
-            </button>
+            </FormButton>
           </div>
         </form>
       </section>

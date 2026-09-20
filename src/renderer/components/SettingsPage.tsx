@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ThemePreference } from '../theme';
+import { FormButton } from './ui/FormButton';
 
 type Props = {
   theme: ThemePreference;
@@ -29,7 +30,7 @@ export const SettingsPage = ({ theme, saveError, onThemeChange, onBack }: Props)
           <h1 ref={headingRef} tabIndex={-1}>Settings</h1>
           <p className="muted">Tune the app’s appearance. These preferences apply across every profile.</p>
         </div>
-        <button type="button" onClick={onBack}>Back to workspace</button>
+        <FormButton type="button" onClick={onBack}>Back to workspace</FormButton>
       </header>
 
       <section className="settings-card" aria-labelledby="appearance-heading">
@@ -65,7 +66,7 @@ export const SettingsPage = ({ theme, saveError, onThemeChange, onBack }: Props)
         {saveError && (
           <div className="settings-error" role="alert">
             <span>{saveError}</span>
-            <button type="button" onClick={() => onThemeChange(theme)}>Retry</button>
+            <FormButton type="button" onClick={() => onThemeChange(theme)}>Retry</FormButton>
           </div>
         )}
       </section>

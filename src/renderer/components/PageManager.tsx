@@ -6,6 +6,7 @@ import {
   isFolderPage,
   removeFolderPage,
 } from '../../domain/profile/navigation';
+import { FormButton } from './ui/FormButton';
 
 type Props = {
   profile: Profile;
@@ -31,14 +32,15 @@ const FolderRow = ({ folder, links, onOpen, onEdit, onDelete }: FolderRowProps) 
         <p className="muted">Page group</p>
       </div>
       <div className="page-group-actions">
-        <button className="icon-button" type="button" aria-label={`Open ${folder.name}`} title={`Open ${folder.name}`} onClick={() => onOpen(folder.id)}>
+        <FormButton className="icon-button" variant="icon" type="button" aria-label={`Open ${folder.name}`} title={`Open ${folder.name}`} onClick={() => onOpen(folder.id)}>
           <ExternalLink aria-hidden="true" />
-        </button>
-        <button className="icon-button" type="button" aria-label={`Edit ${folder.name}`} title={`Edit ${folder.name}`} onClick={(event) => onEdit(folder.id, event.currentTarget)}>
+        </FormButton>
+        <FormButton className="icon-button" variant="icon" type="button" aria-label={`Edit ${folder.name}`} title={`Edit ${folder.name}`} onClick={(event) => onEdit(folder.id, event.currentTarget)}>
           <Pencil aria-hidden="true" />
-        </button>
-        <button
+        </FormButton>
+        <FormButton
           className="icon-button"
+          variant="icon"
           type="button"
           aria-label={`Delete ${folder.name}`}
           title={links.length > 0 ? `Linked from ${links.map((link) => `${link.pageId}/${link.slotId}`).join(', ')}` : `Delete ${folder.name}`}
@@ -46,7 +48,7 @@ const FolderRow = ({ folder, links, onOpen, onEdit, onDelete }: FolderRowProps) 
           onClick={() => onDelete(folder.id)}
         >
           <Trash2 aria-hidden="true" />
-        </button>
+        </FormButton>
       </div>
     </div>
     {links.length > 0 && <small className="folder-warning">Linked from {links.map((link) => `${link.pageId}/${link.slotId}`).join(', ')}</small>}

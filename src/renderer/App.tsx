@@ -15,6 +15,7 @@ import { PageGroupDialog } from './components/PageGroupDialog';
 import { SettingsPage } from './components/SettingsPage';
 import { SlotEditor } from './components/SlotEditor';
 import { WorkspaceActionsCard } from './components/WorkspaceActionsCard';
+import { FormButton } from './components/ui/FormButton';
 import { applyTheme, normalizeThemePreference, subscribeToSystemTheme } from './theme';
 import type { ThemePreference } from './theme';
 
@@ -210,7 +211,7 @@ const App = () => {
             <div className="panel-heading-actions">
               <span className="panel-meta">13 programmable keys</span>
               <div ref={addMenuRef} className="page-group-add-menu">
-                <button ref={pageGroupAddButtonRef} className="icon-button page-group-add-button" type="button" aria-label="Add" title="Add" aria-expanded={isAddMenuOpen} onClick={() => setIsAddMenuOpen((open) => !open)}><Plus aria-hidden="true" /></button>
+                <FormButton ref={pageGroupAddButtonRef} className="icon-button page-group-add-button" variant="icon" type="button" aria-label="Add" title="Add" aria-expanded={isAddMenuOpen} onClick={() => setIsAddMenuOpen((open) => !open)}><Plus aria-hidden="true" /></FormButton>
                 {isAddMenuOpen && (
                   <div
                     className="page-group-menu"
@@ -226,7 +227,7 @@ const App = () => {
                       }
                     }}
                   >
-                    <button ref={addMenuItemRef} role="menuitem" type="button" onClick={() => { pageGroupTriggerRef.current = pageGroupAddButtonRef.current; setPageGroupDialog({ mode: 'create' }); setIsAddMenuOpen(false); }}>Page Groups</button>
+                    <FormButton ref={addMenuItemRef} role="menuitem" type="button" onClick={() => { pageGroupTriggerRef.current = pageGroupAddButtonRef.current; setPageGroupDialog({ mode: 'create' }); setIsAddMenuOpen(false); }}>Page Groups</FormButton>
                   </div>
                 )}
               </div>

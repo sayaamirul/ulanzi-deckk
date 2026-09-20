@@ -121,11 +121,15 @@ describe('profile editor', () => {
     const toolbar = await screen.findByRole('banner');
     const status = within(toolbar).getByLabelText('Connection status');
     const profileSelect = within(toolbar).getByRole('combobox', { name: 'Profile' });
+    const profileActions = within(toolbar).getByRole('button', { name: 'Profile actions' });
     const profileName = within(toolbar).getByLabelText('Profile name');
     const save = within(toolbar).getByRole('button', { name: 'Save profile' });
 
     expect(toolbar).toContainElement(status);
     expect(status.parentElement).toContainElement(profileSelect);
+    expect(status.compareDocumentPosition(profileSelect) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(profileSelect.compareDocumentPosition(profileActions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(profileActions.querySelector('.lucide-ellipsis')).toBeInTheDocument();
     expect(toolbar).toContainElement(save);
     expect(profileName.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(toolbar).queryByRole('button', { name: 'Connect OBS' })).not.toBeInTheDocument();
@@ -154,9 +158,12 @@ describe('profile editor', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(await screen.findByRole('combobox', { name: 'Profile' })).toHaveValue('stream-control');
+    const profileSelect = await screen.findByRole('combobox', { name: 'Profile' });
+    expect(profileSelect).toHaveValue('Stream Control');
+    await user.click(profileSelect);
+    await user.type(profileSelect, 'Stu');
     expect(screen.getByRole('option', { name: 'Studio' })).toBeInTheDocument();
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Profile' }), 'studio');
+    await user.click(screen.getByRole('option', { name: 'Studio' }));
 
     expect(api.selectProfile).toHaveBeenCalledWith('studio');
   });
@@ -166,6 +173,8 @@ describe('profile editor', () => {
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: 'Profile actions' }));
+    expect(screen.getByRole('menuitem', { name: 'New profile' }).querySelector('.lucide-plus')).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Duplicate profile' }).querySelector('.lucide-copy')).toBeInTheDocument();
     await user.click(screen.getByRole('menuitem', { name: 'New profile' }));
     expect(screen.getByRole('heading', { name: 'Create Profile' })).toBeInTheDocument();
     await user.type(within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Profile name' }), 'New Layout');
@@ -191,7 +200,7 @@ describe('profile editor', () => {
 
     expect(screen.getByRole('heading', { name: 'Create Profile' })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent(/could not be saved/i);
-    expect(screen.getByRole('combobox', { name: 'Profile' })).toHaveValue('stream-control');
+    expect(screen.getByRole('combobox', { name: 'Profile' })).toHaveValue('Stream Control');
   });
 
   it('remounts the slot editor when switching profiles', async () => {
@@ -202,16 +211,19 @@ describe('profile editor', () => {
       return () => undefined;
     }) as typeof api.onSnapshot);
     render(<App />);
-    await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 1' }));
     await user.click(screen.getByLabelText('Button label'));
     await user.clear(screen.getByLabelText('Button label'));
     await user.type(screen.getByLabelText('Button label'), 'Draft');
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Profile' }), 'studio');
+    const profileSelect = screen.getByRole('combobox', { name: 'Profile' });
+    await user.click(profileSelect);
+    await user.type(profileSelect, 'Stu');
+    await user.click(screen.getByRole('option', { name: 'Studio' }));
     publishSnapshot?.({ ...streamSnapshotFixture, activeProfileId: 'studio', profile: { ...streamSnapshotFixture.profile, id: 'studio', name: 'Studio' } });
 
-    expect(screen.queryByRole('region', { name: 'Slot editor' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /slot 0_0/i }));
+    expect(screen.queryByRole('region', { name: 'Action editor' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Key 1' }));
     expect(screen.getByLabelText('Button label')).toHaveValue('Stream');
   });
 
@@ -284,7 +296,7 @@ describe('profile editor', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 1' }));
     await user.clear(screen.getByLabelText('Button label'));
     await user.type(screen.getByLabelText('Button label'), 'Unsaved draft');
     await user.click(screen.getByRole('button', { name: 'Settings' }));
@@ -319,7 +331,7 @@ describe('profile editor', () => {
     render(<App />);
 
     const grid = await screen.findByLabelText('D200H button layout');
-    expect(within(grid).getAllByRole('button', { name: /slot/i })).toHaveLength(13);
+    expect(within(grid).getAllByRole('button', { name: /key/i })).toHaveLength(13);
     expect(within(grid).getByText('1')).toBeInTheDocument();
     expect(within(grid).getByText('13')).toBeInTheDocument();
     expect(screen.queryByText('2_4')).not.toBeInTheDocument();
@@ -329,8 +341,8 @@ describe('profile editor', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const firstKey = await screen.findByRole('button', { name: /slot 0_0/i });
-    const secondKey = screen.getByRole('button', { name: /slot 0_1/i });
+    const firstKey = await screen.findByRole('button', { name: 'Key 1' });
+    const secondKey = screen.getByRole('button', { name: 'Key 2' });
     expect(firstKey).toHaveAttribute('aria-pressed', 'false');
 
     await user.click(firstKey);
@@ -348,9 +360,10 @@ describe('profile editor', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 2' }));
 
-    expect(screen.getByRole('region', { name: 'Slot editor' })).toHaveTextContent('No action assigned');
+    expect(screen.getByRole('region', { name: 'Action editor' })).toHaveTextContent('No action assigned');
+    expect(screen.queryByText('CONFIGURE ACTION')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add action/i })).toBeInTheDocument();
     expect(screen.queryByLabelText('Action group')).not.toBeInTheDocument();
   });
@@ -359,7 +372,7 @@ describe('profile editor', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 2' }));
     await user.click(screen.getByRole('button', { name: /add action/i }));
 
     expect(screen.getByLabelText('Button label')).toHaveFocus();
@@ -369,9 +382,13 @@ describe('profile editor', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 1' }));
 
-    expect(screen.getByRole('region', { name: 'Slot editor' })).toHaveTextContent('Edit action');
+    const editor = screen.getByRole('region', { name: 'Action editor' });
+    expect(editor).toHaveTextContent('Edit action');
+    expect(screen.getByRole('heading', { name: 'Edit action' })).toHaveClass('action-editor-title', 'is-editing');
+    expect(screen.getByRole('button', { name: 'Close' }).querySelector('.lucide-x')).toBeInTheDocument();
+    expect(screen.queryByText('Slot 0_0')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Action group')).toHaveValue('OBS');
     expect(screen.getByLabelText('Action type')).toHaveValue('obs.stream.toggle');
   });
@@ -410,7 +427,7 @@ describe('profile editor', () => {
     };
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 2' }));
     await user.click(screen.getByRole('button', { name: /add action/i }));
     await user.clear(screen.getByLabelText('Button label'));
     await user.type(screen.getByLabelText('Button label'), 'Main draft');
@@ -425,14 +442,14 @@ describe('profile editor', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 2' }));
     await user.click(screen.getByRole('button', { name: /add action/i }));
     await user.clear(screen.getByLabelText('Button label'));
     await user.type(screen.getByLabelText('Button label'), 'Browser');
     await user.selectOptions(screen.getByLabelText('Action group'), 'System');
     await user.selectOptions(screen.getByLabelText('Action type'), 'system.open');
     await user.type(screen.getByLabelText('URL or file'), 'https://example.com');
-    await user.click(screen.getByRole('button', { name: /save slot/i }));
+    await user.click(screen.getByRole('button', { name: /save action/i }));
 
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
       pages: expect.arrayContaining([
@@ -460,11 +477,11 @@ describe('profile editor', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 1' }));
     await user.selectOptions(screen.getByLabelText('Action group'), 'OBS');
     await user.selectOptions(screen.getByLabelText('Action type'), 'obs.scene.set');
     await user.type(screen.getByLabelText('Scene name'), 'Starting Soon');
-    await user.click(screen.getByRole('button', { name: /save slot/i }));
+    await user.click(screen.getByRole('button', { name: /save action/i }));
 
     expect(api.saveProfile).toHaveBeenCalledTimes(1);
     const savedProfile = api.saveProfile.mock.calls[0]?.[0];
@@ -639,12 +656,12 @@ describe('profile editor', () => {
     api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 2' }));
     await user.selectOptions(screen.getByLabelText('Action group'), 'Page');
     await user.selectOptions(screen.getByLabelText('Action type'), 'page.goto');
     await user.selectOptions(screen.getByLabelText('Folder'), 'apps');
     expect(screen.getByLabelText('Folder')).toHaveValue('apps');
-    await user.click(screen.getByRole('button', { name: /save slot/i }));
+    await user.click(screen.getByRole('button', { name: /save action/i }));
 
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
       pages: expect.arrayContaining([
@@ -661,7 +678,7 @@ describe('profile editor', () => {
     api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 2' }));
     await user.selectOptions(screen.getByLabelText('Action group'), 'Page');
     await user.selectOptions(screen.getByLabelText('Action type'), 'page.goto');
 
@@ -680,9 +697,9 @@ describe('profile editor', () => {
       });
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_0/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 1' }));
     await user.click(screen.getByRole('button', { name: /add action/i }));
-    expect(screen.getByRole('button', { name: /save slot/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save action/i })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /cancel/i }));
     await user.click(screen.getByRole('button', { name: /delete apps/i }));
 
@@ -695,11 +712,11 @@ describe('profile editor', () => {
     api.getSnapshot.mockResolvedValueOnce(folderSnapshotFixture);
     render(<App />);
 
-    await user.click(await screen.findByRole('button', { name: /slot 0_1/i }));
+    await user.click(await screen.findByRole('button', { name: 'Key 2' }));
     await user.selectOptions(screen.getByLabelText('Action group'), 'Page');
     await user.selectOptions(screen.getByLabelText('Action type'), 'page.back');
     expect(screen.queryByLabelText('Folder')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /save slot/i }));
+    await user.click(screen.getByRole('button', { name: /save action/i }));
 
     expect(api.saveProfile).toHaveBeenCalledWith(expect.objectContaining({
       pages: expect.arrayContaining([

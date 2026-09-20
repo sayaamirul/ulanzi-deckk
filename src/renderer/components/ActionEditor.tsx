@@ -1,5 +1,7 @@
 import type { Action } from '../../domain/actions/types';
 import type { Page } from '../../domain/profile/types';
+import { FormInput } from './ui/FormInput';
+import { FormSelect } from './ui/FormSelect';
 
 type Props = {
   action: Action;
@@ -72,7 +74,7 @@ export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange 
     <div className="action-editor">
       <label>
         Action group
-        <select
+        <FormSelect
           aria-label="Action group"
           value={actionGroup}
           onChange={(event) => {
@@ -82,42 +84,42 @@ export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange 
           }}
         >
           {(Object.keys(actionGroups) as ActionGroup[]).map((group) => <option key={group} value={group}>{group}</option>)}
-        </select>
+        </FormSelect>
       </label>
       <label>
         Action type
-        <select
+        <FormSelect
           aria-label="Action type"
           value={action.type}
           onChange={(event) => selectAction(event.target.value as Action['type'])}
         >
           {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
+        </FormSelect>
       </label>
 
       {action.type === 'obs.scene.set' && (
-        <label>Scene name<input aria-label="Scene name" value={action.sceneName} onChange={(event) => update({ sceneName: event.target.value })} /></label>
+        <label>Scene name<FormInput aria-label="Scene name" value={action.sceneName} onChange={(event) => update({ sceneName: event.target.value })} /></label>
       )}
       {action.type === 'obs.source.visibility.toggle' && (
         <>
-          <label>Scene name<input aria-label="Scene name" value={action.sceneName} onChange={(event) => update({ sceneName: event.target.value })} /></label>
-          <label>Source name<input aria-label="Source name" value={action.sourceName} onChange={(event) => update({ sourceName: event.target.value })} /></label>
+          <label>Scene name<FormInput aria-label="Scene name" value={action.sceneName} onChange={(event) => update({ sceneName: event.target.value })} /></label>
+          <label>Source name<FormInput aria-label="Source name" value={action.sourceName} onChange={(event) => update({ sourceName: event.target.value })} /></label>
         </>
       )}
       {action.type === 'obs.input.mute.toggle' && (
-        <label>Input name<input aria-label="Input name" value={action.inputName} onChange={(event) => update({ inputName: event.target.value })} /></label>
+        <label>Input name<FormInput aria-label="Input name" value={action.inputName} onChange={(event) => update({ inputName: event.target.value })} /></label>
       )}
       {action.type === 'obs.transition.trigger' && (
-        <label>Transition name<input aria-label="Transition name" value={action.transitionName ?? ''} onChange={(event) => update({ transitionName: event.target.value || undefined })} /></label>
+        <label>Transition name<FormInput aria-label="Transition name" value={action.transitionName ?? ''} onChange={(event) => update({ transitionName: event.target.value || undefined })} /></label>
       )}
       {action.type === 'system.launch' && (
-        <label>Executable<input aria-label="Executable" value={action.executable} onChange={(event) => update({ executable: event.target.value })} /></label>
+        <label>Executable<FormInput aria-label="Executable" value={action.executable} onChange={(event) => update({ executable: event.target.value })} /></label>
       )}
       {action.type === 'system.open' && (
-        <label>URL or file<input aria-label="URL or file" value={action.target} onChange={(event) => update({ target: event.target.value })} /></label>
+        <label>URL or file<FormInput aria-label="URL or file" value={action.target} onChange={(event) => update({ target: event.target.value })} /></label>
       )}
       {action.type === 'system.shortcut' && (
-        <label>Shortcut<input aria-label="Shortcut" value={action.accelerator} onChange={(event) => update({ accelerator: event.target.value })} /></label>
+        <label>Shortcut<FormInput aria-label="Shortcut" value={action.accelerator} onChange={(event) => update({ accelerator: event.target.value })} /></label>
       )}
       {action.type === 'system.shell' && (
         <label>Shell command<textarea aria-label="Shell command" value={action.command} onChange={(event) => update({ command: event.target.value })} /></label>
@@ -125,14 +127,14 @@ export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange 
       {action.type === 'page.goto' && (
         <label>
           Folder
-          <select aria-label="Folder" value={action.pageId} onChange={(event) => update({ pageId: event.target.value })}>
+          <FormSelect aria-label="Folder" value={action.pageId} onChange={(event) => update({ pageId: event.target.value })}>
             {folders.length === 0 && <option value="">No folders available</option>}
             {action.pageId && !pageTargets.some((page) => page.id === action.pageId) && <option value={action.pageId} disabled>Invalid page: {action.pageId}</option>}
             {action.pageId && pageTargets.some((page) => page.id === action.pageId) && !folders.some((folder) => folder.id === action.pageId) && (
               <option value={action.pageId}>{pageTargets.find((page) => page.id === action.pageId)?.name ?? action.pageId}</option>
             )}
             {folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
-          </select>
+          </FormSelect>
         </label>
       )}
     </div>

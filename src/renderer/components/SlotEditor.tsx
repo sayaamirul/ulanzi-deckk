@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import type { Page, Slot, SlotId } from '../../domain/profile/types';
 import { ActionEditor } from './ActionEditor';
+import { FormButton } from './ui/FormButton';
+import { FormInput } from './ui/FormInput';
 
 type Props = {
   slot?: Slot;
@@ -29,31 +32,30 @@ export const SlotEditor = ({ slot, slotId, folders, pageTargets, onSave, onCance
   const canSave = Boolean(draft) && (draft?.action.type !== 'page.goto' || pageTargets.some((page) => page.id === pageTarget));
 
   return (
-    <section className="slot-editor" aria-label="Slot editor">
+    <section className="slot-editor" aria-label="Action editor">
       <div className="editor-heading">
         <div>
-          <p className="eyebrow">{slot ? 'EDIT' : 'CONFIGURE'} SLOT {slotId}</p>
-          <h2>{slot ? 'Edit action' : isAdding ? 'Add action' : 'Empty key'}</h2>
+          {slot && <p className="eyebrow">EDIT ACTION</p>}
+          <h2 className={slot ? 'action-editor-title is-editing' : 'action-editor-title'}>{slot ? 'Edit action' : isAdding ? 'Add action' : 'Empty key'}</h2>
         </div>
-        <button type="button" onClick={onCancel}>Close</button>
+        <FormButton className="icon-button" variant="icon" type="button" aria-label="Close" title="Close" onClick={onCancel}><X aria-hidden="true" /></FormButton>
       </div>
       {!isAdding || !draft ? (
         <div className="empty-action-card">
-          <p className="slot-id">Slot {slotId}</p>
           <h3>No action assigned</h3>
           <p className="muted">Add an action to make this key useful.</p>
-          <button className="primary-button" type="button" onClick={() => { setDraft(slot ?? emptySlot(slotId)); setIsAdding(true); }}>Add action</button>
+          <FormButton className="primary-button" variant="solid" color="accent" type="button" onClick={() => { setDraft(slot ?? emptySlot(slotId)); setIsAdding(true); }}>Add action</FormButton>
         </div>
       ) : (
         <>
           <label>
             Button label
-            <input ref={labelInputRef} aria-label="Button label" value={draft.label} onChange={(event) => update({ label: event.target.value })} />
+            <FormInput ref={labelInputRef} aria-label="Button label" value={draft.label} onChange={(event) => update({ label: event.target.value })} />
           </label>
           <ActionEditor action={draft.action} folders={folders} pageTargets={pageTargets} onChange={(action) => update({ action })} />
           <div className="editor-actions">
-            <button className="primary-button" type="button" disabled={!canSave} onClick={() => onSave(draft)}>Save slot</button>
-            <button type="button" onClick={onCancel}>Cancel</button>
+            <FormButton className="primary-button" variant="solid" color="accent" type="button" disabled={!canSave} onClick={() => onSave(draft)}>Save action</FormButton>
+            <FormButton type="button" onClick={onCancel}>Cancel</FormButton>
           </div>
         </>
       )}

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { X } from 'lucide-react';
+import { FormButton } from './ui/FormButton';
+import { FormInput } from './ui/FormInput';
 
 type Props = {
   mode: 'create' | 'duplicate';
@@ -74,11 +76,11 @@ export const ProfileDialog = ({ mode, initialName = '', error, returnFocusRef, o
               <h2 id="profile-dialog-title">{title}</h2>
               <p className="muted">{mode === 'create' ? 'Start with a fresh layout.' : 'Copy the current layout into a new profile.'}</p>
             </div>
-            <button className="icon-button" type="button" aria-label="Close dialog" title="Close" onClick={closeDialog}><X aria-hidden="true" /></button>
+            <FormButton className="icon-button" variant="icon" type="button" aria-label="Close dialog" title="Close" onClick={closeDialog}><X aria-hidden="true" /></FormButton>
           </div>
           <label>
             Profile name
-            <input
+            <FormInput
               ref={inputRef}
               aria-label="Profile name"
               aria-describedby={error ? 'profile-dialog-error' : undefined}
@@ -90,10 +92,10 @@ export const ProfileDialog = ({ mode, initialName = '', error, returnFocusRef, o
           </label>
           {error && <p id="profile-dialog-error" className="profile-dialog-error" role="alert">{error}</p>}
           <div className="profile-dialog-actions">
-            <button type="button" onClick={closeDialog}>Cancel</button>
-            <button className="primary-button" type="submit" disabled={!name.trim()}>
+            <FormButton type="button" onClick={closeDialog}>Cancel</FormButton>
+            <FormButton className="primary-button" variant="solid" color="accent" type="submit" disabled={!name.trim()}>
               {mode === 'create' ? 'Create profile' : 'Duplicate profile'}
-            </button>
+            </FormButton>
           </div>
         </form>
       </section>

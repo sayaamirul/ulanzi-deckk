@@ -1,4 +1,5 @@
 import type { Page } from '../../domain/profile/types';
+import { FormButton } from './ui/FormButton';
 
 type Props = {
   parentPage: Page;
@@ -8,7 +9,7 @@ type Props = {
 
 export const PageBreadcrumbs = ({ parentPage, currentPage, onNavigate }: Props) => (
   <nav className="page-breadcrumbs" aria-label="Page breadcrumbs">
-    <button type="button" onClick={() => onNavigate(parentPage.id)}>{parentPage.name}</button>
+    <FormButton variant="ghost" type="button" onClick={() => onNavigate(parentPage.id)}>{parentPage.name}</FormButton>
     <span aria-hidden="true">/</span>
     <span aria-current="page">{currentPage.name}</span>
   </nav>

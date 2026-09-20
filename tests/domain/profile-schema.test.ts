@@ -44,6 +44,14 @@ describe('profile schema', () => {
     expect(profile.pages[0]?.kind).toBe('normal');
   });
 
+  it('round-trips a legacy profile and only adds the normal-page default', () => {
+    const parsed = parseProfile(validProfileFixture);
+    const roundTripped = parseProfile(JSON.parse(JSON.stringify(parsed)));
+
+    expect(roundTripped).toEqual(parsed);
+    expect(roundTripped.pages[0]).toMatchObject({ id: 'main', kind: 'normal' });
+  });
+
   it('accepts a folder with a normal parent', () => {
     expect(parseProfile({
       ...validProfileFixture,

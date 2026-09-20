@@ -3,6 +3,16 @@ import sharp from 'sharp';
 import type { RenderedSlot } from '../domain/profile/types';
 
 const TILE_SIZE = 196;
+export const MAX_ARCHIVE_SIZE = 196_000;
+
+type WireSlot = {
+  Action: 'com.ulanzi.ulanzideck.system.open';
+  ActionParam: { Path: '' };
+  LinkedTitle: true;
+  Name: string;
+  State: 0;
+  ViewParam: [{ Icon: string }];
+};
 
 const escapeXml = (value: string): string => value
   .replaceAll('&', '&amp;')
@@ -23,24 +33,48 @@ const normalizeTile = async (slot: RenderedSlot): Promise<Buffer> => {
   return sharp(source)
     .resize(TILE_SIZE, TILE_SIZE, { fit: 'cover' })
     .flatten({ background: slot.background ?? '#151923' })
-    .png()
+    .png({ compressionLevel: 9 })
     .toBuffer();
+};
+
+const wireSlotId = (id: RenderedSlot['id']): string => {
+  const [row, column] = id.split('_');
+  return `${column}_${row}`;
+};
+
+export const assertArchiveSize = (archive: Buffer): void => {
+  if (archive.length > MAX_ARCHIVE_SIZE) {
+    throw new RangeError(`D200H page archive exceeds ${MAX_ARCHIVE_SIZE} bytes`);
+  }
 };
 
 const buildArchive = async (slots: RenderedSlot[]): Promise<Buffer> => {
   const zip = new JSZip();
-  const manifest: Record<string, { Icon: string }> = {};
-  zip.file('dummy.txt', '');
+  const images = zip.folder('Images')!;
+  const manifest: Record<string, WireSlot> = {};
 
   for (const slot of slots) {
-    const iconPath = `icons/${slot.id}.png`;
-    manifest[slot.id] = { Icon: iconPath };
-    zip.file(iconPath, await normalizeTile(slot));
+    if (slot.visual === 'empty') continue;
+    const iconPath = `Images/${slot.id}.png`;
+    manifest[wireSlotId(slot.id)] = {
+      Action: 'com.ulanzi.ulanzideck.system.open',
+      ActionParam: { Path: '' },
+      LinkedTitle: true,
+      Name: slot.label,
+      State: 0,
+      ViewParam: [{ Icon: iconPath }],
+    };
+    images.file(`${slot.id}.png`, await normalizeTile(slot));
   }
 
   zip.file('manifest.json', JSON.stringify(manifest));
-  zip.file('sentinel.txt', '');
-  return zip.generateAsync({ type: 'nodebuffer', compression: 'STORE' });
+  const archive = await zip.generateAsync({
+    type: 'nodebuffer',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 9 },
+  });
+  assertArchiveSize(archive);
+  return archive;
 };
 
 export const buildButtonArchive = (slots: RenderedSlot[]): Promise<Buffer> => buildArchive(slots);

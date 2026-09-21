@@ -16,9 +16,13 @@ describe('renderer theme styles', () => {
     expect(styles).toContain('.settings-shell');
     expect(styles).toContain('.theme-option');
     expect(styles).toContain('.workspace-shell {');
-    expect(styles).toContain('.workspace-shell::before');
-    expect(styles).toContain('.workspace-shell::after');
-    expect(styles).toContain('data:image/svg+xml');
+    expect(styles).not.toContain('.workspace-shell::before');
+    expect(styles).not.toContain('.workspace-shell::after');
+    expect(styles).not.toContain('data:image/svg+xml');
+    expect(styles).toContain("url('./assets/ulanzi-deckk.png')");
+    expect(styles).toContain('body::before');
+    expect(styles).toContain('background-size: cover;');
+    expect(styles).toContain('opacity: 0.42;');
     expect(styles).toContain('height: 100vh;');
     expect(styles).toContain('min-height: 0;');
     expect(styles).toContain('overflow: hidden;');
@@ -53,5 +57,8 @@ describe('renderer theme styles', () => {
     const sidebarStyles = styles.match(/\.workspace-sidebar \{[^}]*\}/)?.[0] ?? '';
     expect(sidebarStyles).toContain('gap: 12px;');
     expect(sidebarStyles).toContain('align-content: start;');
+
+    const layoutPanelStyles = styles.match(/\.layout-panel \{[^}]*\}/)?.[0] ?? '';
+    expect(layoutPanelStyles).toContain('align-self: start;');
   });
 });

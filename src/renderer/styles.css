@@ -1,6 +1,7 @@
 :root {
   color-scheme: dark;
   --color-bg: #11131a;
+  --color-backdrop-tint: rgb(17 19 26 / 38%);
   --color-surface: #171a22;
   --color-surface-raised: #202532;
   --color-surface-muted: #10131a;
@@ -34,6 +35,7 @@
 :root[data-theme="light"] {
   color-scheme: light;
   --color-bg: #f5f3fa;
+  --color-backdrop-tint: rgb(245 243 250 / 52%);
   --color-surface: #ffffff;
   --color-surface-raised: #fdfbff;
   --color-surface-muted: #efecf5;
@@ -78,6 +80,25 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow: hidden;
+  position: relative;
+}
+
+body::before {
+  background-image: linear-gradient(var(--color-backdrop-tint), var(--color-backdrop-tint)), url('./assets/ulanzi-deckk.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  content: '';
+  inset: 0;
+  opacity: 0.42;
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 button,
@@ -311,42 +332,8 @@ button:disabled {
 }
 
 .workspace-shell {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%23a78bfa' stroke-opacity='.14' stroke-width='1'%3E%3Cellipse cx='48' cy='24' rx='12' ry='22'/%3E%3Cellipse cx='72' cy='48' rx='22' ry='12'/%3E%3Cellipse cx='48' cy='72' rx='12' ry='22'/%3E%3Cellipse cx='24' cy='48' rx='22' ry='12'/%3E%3C/g%3E%3Ccircle cx='48' cy='48' r='4' fill='none' stroke='%23a78bfa' stroke-opacity='.14' stroke-width='1'/%3E%3C/svg%3E");
-  background-position: 24px 20px;
-  background-repeat: repeat;
-  background-size: 96px 96px;
-  isolation: isolate;
   display: flex;
   flex-direction: column;
-}
-
-.workspace-shell::before,
-.workspace-shell::after {
-  border: 1px solid color-mix(in srgb, var(--color-accent) 28%, transparent);
-  border-radius: 50%;
-  content: '';
-  pointer-events: none;
-  position: absolute;
-  z-index: -1;
-}
-
-.workspace-shell::before {
-  height: 420px;
-  right: -220px;
-  top: -250px;
-  width: 420px;
-  box-shadow: 0 0 0 26px color-mix(in srgb, var(--color-accent) 7%, transparent), 0 0 0 52px color-mix(in srgb, var(--color-accent) 4%, transparent);
-}
-
-.workspace-shell::after {
-  bottom: -130px;
-  height: 240px;
-  left: -120px;
-  width: 240px;
-  opacity: 0.7;
-}
-
-.workspace-shell {
   margin: 0 auto;
   max-width: 1440px;
   padding: 20px 24px 32px;
@@ -566,6 +553,7 @@ button:disabled {
 }
 
 .layout-panel {
+  align-self: start;
   min-height: 0;
   overflow: auto;
 }

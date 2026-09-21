@@ -1,15 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  let rejectRead: (error: Error) => void = () => undefined;
+  type NativeListener = (value: Buffer | Error) => void;
+  const listeners = {
+    data: new Set<NativeListener>(),
+    error: new Set<NativeListener>(),
+  };
   const device = {
     write: vi.fn(async () => undefined),
-    read: vi.fn(() => new Promise<number[]>((_resolve, reject) => { rejectRead = reject; })),
+    read: vi.fn(() => new Promise<number[]>(() => undefined)),
     close: vi.fn(async () => undefined),
+    on: vi.fn((event: 'data' | 'error', listener: NativeListener) => {
+      listeners[event].add(listener);
+      return device;
+    }),
+    off: vi.fn((event: 'data' | 'error', listener: NativeListener) => {
+      listeners[event].delete(listener);
+      return device;
+    }),
   };
   return {
     device,
-    rejectNextRead: (error: Error) => rejectRead(error),
+    emitData: (data: Buffer) => listeners.data.forEach((listener) => listener(data)),
+    emitError: (error: Error) => listeners.error.forEach((listener) => listener(error)),
+    resetListeners: () => {
+      listeners.data.clear();
+      listeners.error.clear();
+    },
     open: vi.fn(async () => device),
     devices: vi.fn(async () => []),
   };
@@ -33,6 +50,7 @@ const descriptor: DeviceDescriptor = {
 describe('Node HID transport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.resetListeners();
   });
 
   it('prepends exactly one zero report ID', async () => {
@@ -53,12 +71,12 @@ describe('Node HID transport', () => {
     await transport.close();
   });
 
-  it('emits a read-loop failure', async () => {
+  it('forwards native HID errors', async () => {
     const transport = await NodeHidTransport.open(descriptor);
     const errors: Error[] = [];
     transport.onError((error) => errors.push(error));
 
-    mocks.rejectNextRead(new Error('device removed'));
+    mocks.emitError(new Error('device removed'));
 
     await vi.waitFor(() => expect(errors).toEqual([
       expect.objectContaining({ message: 'device removed' }),
@@ -66,11 +84,16 @@ describe('Node HID transport', () => {
     await transport.close();
   });
 
-  it('uses bounded reads so pending writes are not starved by node-hid', async () => {
+  it('receives event-driven data without occupying the HID operation queue', async () => {
     const transport = await NodeHidTransport.open(descriptor);
+    const received: Buffer[] = [];
+    transport.onData((data) => received.push(data));
 
-    expect(mocks.device.read).toHaveBeenCalledWith(50);
+    mocks.emitData(Buffer.from([0x7c, 0x7c, 0x01, 0x03]));
 
+    expect(received).toEqual([Buffer.from([0x7c, 0x7c, 0x01, 0x03])]);
+    expect(mocks.device.read).not.toHaveBeenCalled();
+    await expect(transport.write(Buffer.alloc(1024))).resolves.toBeUndefined();
     await transport.close();
   });
 });

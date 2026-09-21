@@ -184,6 +184,34 @@ describe('D200H device', () => {
     }
   });
 
+  it('allows the firmware restart window before timing out a page acknowledgement', async () => {
+    vi.useFakeTimers();
+    try {
+      const transport = new FakeHidTransport();
+      transport.onWrite = (report, fake) => {
+        if (report.readUInt16BE(2) === 0x0006) fake.emitFrame(0x0303, Buffer.from('{}'));
+      };
+      const device = new D200HDevice(transport, [], { handshakeSettleMs: 0 });
+      const connection = device.connect();
+      const rejection = connection.then(
+        () => { throw new Error('expected the page acknowledgement timeout'); },
+        (error: unknown) => expect(error).toEqual(expect.objectContaining({
+          message: 'Timed out waiting for D200H page acknowledgement',
+        })),
+      );
+      await vi.waitFor(() => expect(transport.operations).toContain('write:0001'));
+
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(await settles(connection)).toBe('pending');
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(await settles(connection)).toBe('pending');
+      await vi.advanceTimersByTimeAsync(20_000);
+      await rejection;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('cancels an active handshake and closes exactly once on disconnect', async () => {
     vi.useFakeTimers();
     try {

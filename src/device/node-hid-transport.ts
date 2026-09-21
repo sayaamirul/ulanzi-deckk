@@ -12,7 +12,8 @@ export class NodeHidTransport implements HidTransport {
   private closed = false;
 
   private constructor(private readonly device: HIDAsync) {
-    this.readLoop();
+    this.device.on('data', this.handleData);
+    this.device.on('error', this.handleDeviceError);
   }
 
   static async list(): Promise<DeviceDescriptor[]> {
@@ -56,21 +57,21 @@ export class NodeHidTransport implements HidTransport {
     this.closed = true;
     this.listener = undefined;
     this.errorListeners.clear();
-    await this.device.close();
-  }
-
-  private async readLoop(): Promise<void> {
-    while (!this.closed) {
-      try {
-        const data = await this.device.read(50);
-        if (data && !this.closed) this.listener?.(Buffer.from(data));
-      } catch (error) {
-        if (!this.closed) {
-          const failure = error instanceof Error ? error : new Error(String(error));
-          for (const listener of this.errorListeners) listener(failure);
-        }
-        return;
-      }
+    try {
+      await this.device.close();
+    } finally {
+      this.device.off('data', this.handleData);
+      this.device.off('error', this.handleDeviceError);
     }
   }
+
+  private readonly handleData = (data: Buffer): void => {
+    if (!this.closed) this.listener?.(Buffer.from(data));
+  };
+
+  private readonly handleDeviceError = (error: unknown): void => {
+    if (this.closed) return;
+    const failure = error instanceof Error ? error : new Error(String(error));
+    for (const listener of this.errorListeners) listener(failure);
+  };
 }

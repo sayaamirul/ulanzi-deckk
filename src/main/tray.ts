@@ -7,7 +7,7 @@ export const createTray = (window: BrowserWindow, runtime: Runtime): Tray => {
     await runtime.stop();
     await runtime.start();
   };
-  tray.setToolTip('Ulanzi D200H OBS');
+  tray.setToolTip('Ulanzi DecKK');
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Show editor', click: () => { window.show(); window.focus(); } },
     { label: 'Reconnect device', click: () => { void reconnectDevice(); } },

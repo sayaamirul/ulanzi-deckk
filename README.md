@@ -1,4 +1,4 @@
-# Ulanzi D200H OBS
+# Ulanzi DecKK
 
 Linux-first desktop control software for the Ulanzi D200H stream controller.
 

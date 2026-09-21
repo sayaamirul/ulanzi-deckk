@@ -47,7 +47,7 @@ export const ProfileToolbar = ({
   return (
     <header className="profile-toolbar">
       <div className="profile-toolbar-main">
-        <p className="eyebrow">UlanziDeKK</p>
+        <p className="eyebrow">Ulanzi DecKK</p>
         <div className="profile-toolbar-fields">
           <FormInput aria-label="Profile name" value={profileName} onChange={(event) => onNameChange(event.target.value)} />
           <FormButton className="icon-button primary-button" variant="icon" color="accent" type="button" aria-label="Save profile" title="Save profile" onClick={onSave}><Save aria-hidden="true" /></FormButton>

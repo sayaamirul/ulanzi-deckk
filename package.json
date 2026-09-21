@@ -1,8 +1,8 @@
 {
-  "name": "ulanzi-d200h-obs",
+  "name": "ulanzi-deckk",
   "version": "0.1.0",
   "private": true,
-  "description": "Linux-first OBS controller for the Ulanzi D200H",
+  "description": "Linux-first OBS controller for Ulanzi DecKK",
   "type": "module",
   "main": "./out/main/index.js",
   "engines": {

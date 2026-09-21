@@ -133,7 +133,7 @@ describe('profile editor', () => {
     const profileName = within(toolbar).getByLabelText('Profile name');
     const save = within(toolbar).getByRole('button', { name: 'Save profile' });
 
-    expect(toolbar).toHaveTextContent('UlanziDeKK');
+    expect(toolbar).toHaveTextContent('Ulanzi DecKK');
     expect(toolbar).not.toHaveTextContent('STREAM PROFILE');
     expect(toolbar).toContainElement(status);
     expect(status.parentElement).toContainElement(profileSelect);

@@ -14,6 +14,11 @@ type EventWaiter = {
   reject: (error: Error) => void;
 };
 
+// A page upload makes the D200H redraw its logo/grid before acknowledging the archive.
+// On the physical device this takes roughly 15–20 seconds over HID.
+const D200H_HANDSHAKE_TIMEOUT_MS = 15_000;
+const D200H_ARCHIVE_ACK_TIMEOUT_MS = 30_000;
+
 type D200HDeviceOptions = {
   handshakeTimeoutMs?: number;
   handshakeSettleMs?: number;
@@ -52,9 +57,9 @@ export class D200HDevice {
     options: D200HDeviceOptions = {},
   ) {
     this.slots = initialSlots;
-    this.handshakeTimeoutMs = options.handshakeTimeoutMs ?? 5_000;
+    this.handshakeTimeoutMs = options.handshakeTimeoutMs ?? D200H_HANDSHAKE_TIMEOUT_MS;
     this.handshakeSettleMs = options.handshakeSettleMs ?? 250;
-    this.archiveAckTimeoutMs = options.archiveAckTimeoutMs ?? 5_000;
+    this.archiveAckTimeoutMs = options.archiveAckTimeoutMs ?? D200H_ARCHIVE_ACK_TIMEOUT_MS;
     this.keepaliveIntervalMs = options.keepaliveIntervalMs ?? 2_000;
     this.setTimeoutFn = options.setTimeout ?? setTimeout;
     this.clearTimeoutFn = options.clearTimeout ?? clearTimeout;

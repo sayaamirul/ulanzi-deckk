@@ -26,6 +26,24 @@ describe('action editor', () => {
     expect(screen.getByLabelText('Scene name')).toBeInTheDocument();
   });
 
+  it('shows OBS scenes as a searchable select when they are available', async () => {
+    const user = userEvent.setup();
+    render(<ActionEditor action={{ type: 'obs.scene.set', sceneName: 'Live' }} sceneNames={['Starting Soon', 'Live']} onChange={() => undefined} />);
+
+    const sceneSelect = screen.getByRole('combobox', { name: 'Scene name' });
+    expect(sceneSelect).toHaveValue('Live');
+    await user.click(sceneSelect);
+
+    expect(screen.getByRole('option', { name: 'Starting Soon' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Live' })).toBeInTheDocument();
+  });
+
+  it('shows a scene-list loading error instead of silently hiding the problem', () => {
+    render(<ActionEditor action={{ type: 'obs.scene.set', sceneName: '' }} sceneNamesError="Could not load scenes from OBS" onChange={() => undefined} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not load scenes from obs/i);
+  });
+
   it('filters the action select by the selected action group', async () => {
     const user = userEvent.setup();
     const Harness = () => {

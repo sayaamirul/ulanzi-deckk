@@ -13,6 +13,7 @@ export const IPC_METHODS = [
   'selectPage',
   'dispatchSlot',
   'connectObs',
+  'getObsScenes',
   'setBrightness',
   'getPreferences',
   'savePreferences',
@@ -28,6 +29,7 @@ export type UlanziApi = {
   selectPage(pageId: string): Promise<void>;
   dispatchSlot(slotId: string): Promise<void>;
   connectObs(settings: ObsSettings): Promise<void>;
+  getObsScenes(): Promise<string[]>;
   setBrightness(value: number): Promise<void>;
   getPreferences(): Promise<AppPreferences>;
   savePreferences(preferences: AppPreferences): Promise<void>;
@@ -46,6 +48,7 @@ export const registerIpc = (
   ipc.handle('ulanzi:selectPage', (_event, pageId: string) => runtime.selectPage(pageId));
   ipc.handle('ulanzi:dispatchSlot', (_event, slotId: string) => runtime.dispatchSlot(slotId as never));
   ipc.handle('ulanzi:connectObs', (_event, settings: ObsSettings) => runtime.connectObs(settings));
+  ipc.handle('ulanzi:getObsScenes', () => runtime.listObsScenes());
   ipc.handle('ulanzi:setBrightness', (_event, value: number) => runtime.setBrightness(value));
   ipc.handle('ulanzi:getPreferences', () => preferencesStore.load());
   ipc.handle('ulanzi:savePreferences', (_event, preferences: AppPreferences) => preferencesStore.save(preferences));

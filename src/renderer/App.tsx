@@ -39,6 +39,11 @@ const App = () => {
   const [isProfileSaveConfirmationOpen, setIsProfileSaveConfirmationOpen] = useState(false);
   const [profileDialogError, setProfileDialogError] = useState<string>();
   const [profileSwitchError, setProfileSwitchError] = useState<string>();
+  const [isObsConnecting, setIsObsConnecting] = useState(false);
+  const [obsConnectionError, setObsConnectionError] = useState<string>();
+  const [obsScenes, setObsScenes] = useState<string[]>([]);
+  const [obsScenesLoading, setObsScenesLoading] = useState(false);
+  const [obsScenesError, setObsScenesError] = useState<string>();
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const pageGroupAddButtonRef = useRef<HTMLButtonElement>(null);
   const pageGroupTriggerRef = useRef<HTMLElement>(null);
@@ -87,6 +92,33 @@ const App = () => {
     const unsubscribe = api.onSnapshot((next) => { if (mounted) setSnapshot(next); });
     return () => { mounted = false; unsubscribe(); };
   }, [api]);
+
+  useEffect(() => {
+    if (!snapshot?.obs.connected) {
+      setObsScenes([]);
+      setObsScenesLoading(false);
+      setObsScenesError(undefined);
+      return undefined;
+    }
+    let mounted = true;
+    setObsScenesLoading(true);
+    setObsScenesError(undefined);
+    void api.getObsScenes().then((scenes) => {
+      if (mounted) {
+        setObsScenes(scenes);
+        if (scenes.length === 0) setObsScenesError('OBS returned no scenes. Check the active scene collection.');
+      }
+    }).catch((error) => {
+      if (mounted) {
+        setObsScenes([]);
+        const message = error instanceof Error ? error.message : String(error);
+        setObsScenesError(`Could not load scenes from OBS: ${message}`);
+      }
+    }).finally(() => {
+      if (mounted) setObsScenesLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [api, snapshot?.obs.connected]);
 
   const page = useMemo(() => snapshot?.profile.pages.find((candidate) => candidate.id === snapshot.activePageId), [snapshot]);
   const selectedSlot = selectedSlotId && page ? page.slots[selectedSlotId] : undefined;
@@ -141,7 +173,19 @@ const App = () => {
     }
     setPageGroupDialog(undefined);
   };
-  const connectObs = async () => { await api.connectObs({ url: 'ws://127.0.0.1:4455' }); };
+  const connectObs = async () => {
+    setIsObsConnecting(true);
+    setObsConnectionError(undefined);
+    try {
+      await api.connectObs({ url: 'ws://127.0.0.1:4455' });
+      setSnapshot(await api.getSnapshot());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setObsConnectionError(`Could not connect to OBS: ${message}`);
+    } finally {
+      setIsObsConnecting(false);
+    }
+  };
   const selectProfile = async (profileId: string) => {
     setProfileSwitchError(undefined);
     try {
@@ -250,9 +294,16 @@ const App = () => {
           <DeviceGrid page={snapshot.renderedPage} selectedSlotId={selectedSlotId} onSelect={openSlot} />
         </section>
         <aside className="workspace-sidebar" aria-label="Workspace sidebar">
-          {selectedSlotId && <SlotEditor key={`${snapshot.profile.id}:${snapshot.activePageId}:${selectedSlotId}`} slot={selectedSlot ? structuredClone(selectedSlot) : undefined} slotId={selectedSlotId} folders={selectableFolders} pageTargets={snapshot.profile.pages} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
+          {selectedSlotId && <SlotEditor key={`${snapshot.profile.id}:${snapshot.activePageId}:${selectedSlotId}`} slot={selectedSlot ? structuredClone(selectedSlot) : undefined} slotId={selectedSlotId} folders={selectableFolders} pageTargets={snapshot.profile.pages} sceneNames={obsScenes} sceneNamesLoading={obsScenesLoading} sceneNamesError={obsScenesError} onSave={saveSlot} onCancel={() => setSelectedSlotId(undefined)} />}
           <PageManager profile={snapshot.profile} activePageId={snapshot.activePageId} onSaveProfile={saveProfile} onSelectPage={(id) => { void api.selectPage(id); }} onEditPageGroup={(pageId, trigger) => { pageGroupTriggerRef.current = trigger; setPageGroupDialog({ mode: 'edit', pageId }); }} />
-          <WorkspaceActionsCard onConnectObs={() => { void connectObs(); }} onOpenSettings={() => setScreen('settings')} settingsButtonRef={settingsTriggerRef} />
+          <WorkspaceActionsCard
+            onConnectObs={() => { void connectObs(); }}
+            onOpenSettings={() => setScreen('settings')}
+            settingsButtonRef={settingsTriggerRef}
+            isConnectingObs={isObsConnecting}
+            obsConnected={snapshot.obs.connected}
+            obsConnectionError={obsConnectionError}
+          />
         </aside>
       </div>
       {pageGroupDialog && (

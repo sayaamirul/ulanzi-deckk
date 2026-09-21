@@ -10,6 +10,9 @@ type Props = {
   slotId: SlotId;
   folders: Page[];
   pageTargets: Page[];
+  sceneNames?: string[];
+  sceneNamesLoading?: boolean;
+  sceneNamesError?: string;
   onSave: (slot: Slot) => void;
   onCancel: () => void;
 };
@@ -20,7 +23,7 @@ const emptySlot = (slotId: SlotId): Slot => ({
   action: { type: 'obs.stream.toggle' },
 });
 
-export const SlotEditor = ({ slot, slotId, folders, pageTargets, onSave, onCancel }: Props) => {
+export const SlotEditor = ({ slot, slotId, folders, pageTargets, sceneNames = [], sceneNamesLoading = false, sceneNamesError, onSave, onCancel }: Props) => {
   const [draft, setDraft] = useState<Slot | undefined>(slot);
   const [isAdding, setIsAdding] = useState(Boolean(slot));
   const labelInputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +55,7 @@ export const SlotEditor = ({ slot, slotId, folders, pageTargets, onSave, onCance
             Button label
             <FormInput ref={labelInputRef} aria-label="Button label" value={draft.label} onChange={(event) => update({ label: event.target.value })} />
           </label>
-          <ActionEditor action={draft.action} folders={folders} pageTargets={pageTargets} onChange={(action) => update({ action })} />
+          <ActionEditor action={draft.action} folders={folders} pageTargets={pageTargets} sceneNames={sceneNames} sceneNamesLoading={sceneNamesLoading} sceneNamesError={sceneNamesError} onChange={(action) => update({ action })} />
           <div className="editor-actions">
             <FormButton className="primary-button" variant="solid" color="accent" type="button" disabled={!canSave} onClick={() => onSave(draft)}>Save action</FormButton>
             <FormButton type="button" onClick={onCancel}>Cancel</FormButton>

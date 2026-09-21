@@ -7,6 +7,9 @@ type Props = {
   action: Action;
   folders?: Page[];
   pageTargets?: Page[];
+  sceneNames?: string[];
+  sceneNamesLoading?: boolean;
+  sceneNamesError?: string;
   onChange: (action: Action) => void;
 };
 
@@ -60,7 +63,7 @@ const defaultAction = (type: Action['type']): Action => {
   }
 };
 
-export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange }: Props) => {
+export const ActionEditor = ({ action, folders = [], pageTargets = [], sceneNames = [], sceneNamesLoading = false, sceneNamesError, onChange }: Props) => {
   const update = (value: Partial<Action>) => onChange({ ...action, ...value } as Action);
   const actionGroup = groupForAction(action.type);
   const options = actionGroups[actionGroup];
@@ -68,6 +71,33 @@ export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange 
     const nextAction = defaultAction(type);
     if (nextAction.type === 'page.goto' && folders[0]) nextAction.pageId = folders[0].id;
     onChange(nextAction);
+  };
+  const sceneNameField = (sceneName: string, onSceneNameChange: (value: string) => void, label: string = 'Scene name') => {
+    const sceneFeedback = (
+      <>
+        {sceneNamesLoading && <p className="action-editor-feedback muted" role="status">Loading scenes from OBS…</p>}
+        {sceneNamesError && <p className="action-editor-feedback action-editor-feedback--error" role="alert">{sceneNamesError}</p>}
+      </>
+    );
+    if (sceneNames.length === 0) {
+      return <>
+        <label>{label}<FormInput aria-label={label} value={sceneName} onChange={(event) => onSceneNameChange(event.target.value)} /></label>
+        {sceneFeedback}
+      </>;
+    }
+
+    const hasCurrentScene = sceneNames.includes(sceneName);
+    return <>
+      <label>
+        {label}
+        <FormSelect searchable aria-label={label} value={sceneName} onChange={(event) => onSceneNameChange(event.target.value)}>
+          {!sceneName && <option value="">Select a scene</option>}
+          {sceneName && !hasCurrentScene && <option value={sceneName}>{sceneName} (saved)</option>}
+          {sceneNames.map((sceneName) => <option key={sceneName} value={sceneName}>{sceneName}</option>)}
+        </FormSelect>
+      </label>
+      {sceneFeedback}
+    </>;
   };
 
   return (
@@ -100,11 +130,11 @@ export const ActionEditor = ({ action, folders = [], pageTargets = [], onChange 
       </label>
 
       {action.type === 'obs.scene.set' && (
-        <label>Scene name<FormInput aria-label="Scene name" value={action.sceneName} onChange={(event) => update({ sceneName: event.target.value })} /></label>
+        sceneNameField(action.sceneName, (sceneName) => update({ sceneName }))
       )}
       {action.type === 'obs.source.visibility.toggle' && (
         <>
-          <label>Scene name<FormInput aria-label="Scene name" value={action.sceneName} onChange={(event) => update({ sceneName: event.target.value })} /></label>
+          {sceneNameField(action.sceneName, (sceneName) => update({ sceneName }))}
           <label>Source name<FormInput aria-label="Source name" value={action.sourceName} onChange={(event) => update({ sourceName: event.target.value })} /></label>
         </>
       )}

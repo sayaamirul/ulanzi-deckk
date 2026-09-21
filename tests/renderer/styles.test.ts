@@ -26,6 +26,9 @@ describe('renderer theme styles', () => {
     expect(styles).toContain('overflow: auto;');
     expect(styles).toContain('.profile-toolbar-fields > input');
     expect(styles).not.toContain('.profile-toolbar input');
+    expect(styles).toContain('.profile-actions-menu .profile-menu');
+    expect(styles).toContain('.profile-menu .ui-button:hover');
+    expect(styles).toContain('justify-content: flex-start;');
     expect(styles).toContain('.ui-input.ui-input--choice');
     expect(styles).not.toContain('#7ee787');
 

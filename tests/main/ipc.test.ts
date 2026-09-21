@@ -12,6 +12,7 @@ describe('IPC contract', () => {
       'selectPage',
       'dispatchSlot',
       'connectObs',
+      'getObsScenes',
       'setBrightness',
       'getPreferences',
       'savePreferences',

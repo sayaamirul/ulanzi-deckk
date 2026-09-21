@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppSnapshot } from '../../src/main/runtime';
@@ -52,6 +52,7 @@ const api = {
   selectPage: vi.fn(async () => undefined),
   dispatchSlot: vi.fn(async () => undefined),
   connectObs: vi.fn(async () => undefined),
+  getObsScenes: vi.fn(async () => [] as string[]),
   setBrightness: vi.fn(async () => undefined),
   getPreferences: vi.fn(async (): Promise<AppPreferences> => ({ theme: 'system' })),
   savePreferences: vi.fn(async (_preferences: AppPreferences): Promise<void> => undefined),
@@ -502,6 +503,33 @@ describe('profile editor', () => {
     });
   });
 
+  it('loads OBS scene names for the action editor when connected', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce({ ...streamSnapshotFixture, obs: { ...streamSnapshotFixture.obs, connected: true } });
+    api.getObsScenes.mockResolvedValueOnce(['Starting Soon', 'Live']);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Key 1' }));
+    await chooseSearchableOption(user, 'Action type', 'scene', 'Switch scene');
+
+    const sceneSelect = await screen.findByRole('combobox', { name: 'Scene name' });
+    await user.click(sceneSelect);
+    expect(screen.getByRole('option', { name: 'Starting Soon' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Live' })).toBeInTheDocument();
+  });
+
+  it('shows an OBS scene loading error in the action editor', async () => {
+    const user = userEvent.setup();
+    api.getSnapshot.mockResolvedValueOnce({ ...streamSnapshotFixture, obs: { ...streamSnapshotFixture.obs, connected: true } });
+    api.getObsScenes.mockRejectedValueOnce(new Error('OBS request failed'));
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Key 1' }));
+    await chooseSearchableOption(user, 'Action type', 'scene', 'Switch scene');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/could not load scenes from obs: obs request failed/i);
+  });
+
   it('connects OBS using the local default endpoint', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -509,6 +537,46 @@ describe('profile editor', () => {
     await user.click(await screen.findByRole('button', { name: /connect obs/i }));
 
     expect(api.connectObs).toHaveBeenCalledWith({ url: 'ws://127.0.0.1:4455' });
+  });
+
+  it('refreshes the connection indicator after OBS connects', async () => {
+    const user = userEvent.setup();
+    const connectedSnapshot: AppSnapshot = {
+      ...streamSnapshotFixture,
+      obs: { ...streamSnapshotFixture.obs, connected: true },
+    };
+    api.getSnapshot
+      .mockResolvedValueOnce(streamSnapshotFixture)
+      .mockResolvedValueOnce(connectedSnapshot);
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Connect OBS' }));
+
+    expect(await screen.findByText('OBS connected')).toBeInTheDocument();
+    expect(within(await screen.findByRole('banner')).getByText('OBS: connected')).toBeInTheDocument();
+  });
+
+  it('shows OBS connection progress and a useful failure message', async () => {
+    const user = userEvent.setup();
+    let rejectConnection: ((error: Error) => void) | undefined;
+    api.connectObs.mockImplementationOnce(() => new Promise<undefined>((_resolve, reject) => {
+      rejectConnection = reject;
+    }));
+    render(<App />);
+
+    const connectButton = await screen.findByRole('button', { name: 'Connect OBS' });
+    await user.click(connectButton);
+
+    expect(connectButton).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent(/connecting to obs/i);
+
+    await act(async () => {
+      rejectConnection?.(new Error('connect ECONNREFUSED 127.0.0.1:4455'));
+    });
+
+    await waitFor(() => expect(connectButton).not.toBeDisabled());
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not connect to obs/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/econnrefused/i);
   });
 
   it('persists a profile name edit', async () => {

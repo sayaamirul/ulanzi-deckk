@@ -15,6 +15,7 @@ const api: UlanziApi = {
   selectPage: (pageId) => ipcRenderer.invoke('ulanzi:selectPage', pageId),
   dispatchSlot: (slotId) => ipcRenderer.invoke('ulanzi:dispatchSlot', slotId),
   connectObs: (settings) => ipcRenderer.invoke('ulanzi:connectObs', settings),
+  getObsScenes: () => ipcRenderer.invoke('ulanzi:getObsScenes'),
   setBrightness: (value) => ipcRenderer.invoke('ulanzi:setBrightness', value),
   getPreferences: () => ipcRenderer.invoke('ulanzi:getPreferences'),
   savePreferences: (preferences) => ipcRenderer.invoke('ulanzi:savePreferences', preferences),

@@ -49,6 +49,7 @@ class FakeObs {
 
   async connect(): Promise<void> {}
   async disconnect(): Promise<void> {}
+  async listScenes(): Promise<string[]> { return []; }
   getState(): ObsRuntimeState { return this.state; }
   onState(listener: (state: ObsRuntimeState) => void): () => void { this.stateListener = listener; return () => undefined; }
   async execute(action: Extract<Action, { type: `obs.${string}` }>): Promise<void> { this.calls.push(action); }
@@ -270,6 +271,21 @@ describe('runtime', () => {
     const { runtime } = createRuntimeWithFakes(streamProfileFixture);
 
     await expect(runtime.setBrightness(80)).rejects.toThrow('D200H HID brightness is not verified');
+  });
+
+  it('publishes and rethrows OBS connection failures', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+    fakes.obs.connect = async () => { throw new Error('OBS unavailable'); };
+
+    await expect(runtime.connectObs({ url: 'ws://127.0.0.1:4455' })).rejects.toThrow('OBS unavailable');
+    expect(runtime.getSnapshot().lastError).toEqual({ code: 'obs_connection_failed', message: 'OBS unavailable' });
+  });
+
+  it('lists OBS scenes through the runtime port', async () => {
+    const { runtime, fakes } = createRuntimeWithFakes(streamProfileFixture);
+    fakes.obs.listScenes = async () => ['Starting Soon', 'Live'];
+
+    await expect(runtime.listObsScenes()).resolves.toEqual(['Starting Soon', 'Live']);
   });
 
   it('publishes updated state snapshots', async () => {

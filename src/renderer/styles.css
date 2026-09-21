@@ -393,8 +393,7 @@ button:disabled {
   width: min(22vw, 260px);
 }
 
-.profile-actions-menu,
-.profile-menu {
+.profile-actions-menu {
   position: relative;
 }
 
@@ -426,9 +425,43 @@ button:disabled {
   width: 16px;
 }
 
-.toolbar-actions .profile-menu {
+.profile-actions-menu > .icon-button {
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.profile-actions-menu > .icon-button:hover,
+.profile-actions-menu > .icon-button[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-raised));
+  border-color: var(--color-accent);
+  color: var(--color-accent-hover);
+}
+
+.profile-actions-menu .profile-menu {
   left: auto;
   right: 0;
+  min-width: 196px;
+  padding: 6px;
+  top: calc(100% + 6px);
+}
+
+.profile-menu .ui-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  justify-content: flex-start;
+  min-height: 34px;
+  padding: 8px 10px;
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  width: 100%;
+}
+
+.profile-menu .ui-button:hover,
+.profile-menu .ui-button:focus-visible {
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-raised));
+  border-color: var(--color-accent);
+  color: var(--color-text);
 }
 
 .toolbar-actions {
@@ -541,6 +574,40 @@ button:disabled {
   gap: 8px;
   justify-content: flex-end;
   padding: 8px 12px;
+}
+
+.workspace-actions-status {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.workspace-actions-status-label {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.workspace-actions-status-label.is-online {
+  color: var(--color-success);
+}
+
+.workspace-actions-status-label.is-error,
+.workspace-actions-error {
+  color: var(--color-danger);
+}
+
+.workspace-actions-error {
+  font-size: 0.7rem;
+  line-height: 1.25;
+  max-width: 210px;
+  overflow-wrap: anywhere;
+}
+
+.workspace-actions-card .ui-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .panel-heading {
@@ -805,6 +872,15 @@ button:disabled {
 .action-editor textarea {
   min-height: 84px;
   resize: vertical;
+}
+
+.action-editor-feedback {
+  font-size: 0.75rem;
+  margin: 6px 0 0;
+}
+
+.action-editor-feedback--error {
+  color: var(--color-danger);
 }
 
 .editor-actions {

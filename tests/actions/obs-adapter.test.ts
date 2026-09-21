@@ -39,4 +39,37 @@ describe('OBS adapter', () => {
       'GetInputMute',
     ]));
   });
+
+  it('resets state and closes the client when initial state refresh fails', async () => {
+    const obs = new FakeObsClient();
+    obs.requestError = new Error('OBS request failed');
+    const adapter = new ObsAdapter(obs);
+
+    await expect(adapter.connect({ url: 'ws://127.0.0.1:4455' })).rejects.toThrow('OBS request failed');
+
+    expect(adapter.getState().connected).toBe(false);
+    expect(obs.connected).toBe(false);
+    expect(obs.disconnectCalls).toBe(1);
+  });
+
+  it('stays connected when OBS has no replay buffer configured', async () => {
+    const obs = new FakeObsClient();
+    const replayBufferError = Object.assign(new Error('Replay buffer is not available.'), { code: 604 });
+    obs.requestErrors.GetReplayBufferStatus = replayBufferError;
+    const adapter = new ObsAdapter(obs);
+
+    await expect(adapter.connect({ url: 'ws://127.0.0.1:4455' })).resolves.toBeUndefined();
+
+    expect(adapter.getState()).toMatchObject({ connected: true, replayBuffer: false });
+  });
+
+  it('lists scene names from OBS', async () => {
+    const obs = new FakeObsClient();
+    obs.sceneList = ['Starting Soon', 'Live'];
+    const adapter = new ObsAdapter(obs);
+    await adapter.connect({ url: 'ws://127.0.0.1:4455' });
+
+    await expect(adapter.listScenes()).resolves.toEqual(['Starting Soon', 'Live']);
+    expect(obs.requests).toContainEqual({ requestType: 'GetSceneList' });
+  });
 });

@@ -21,11 +21,28 @@ export class ObsAdapter {
   constructor(private readonly client: ObsClient) {}
 
   async connect(settings: ObsSettings): Promise<void> {
-    await this.client.connect(settings.url, settings.password);
-    this.unsubscribeEvents = this.client.onEvent((event) => this.handleEvent(event));
-    this.state = { ...this.state, connected: true };
-    await this.refreshState();
-    this.emitState();
+    let clientConnected = false;
+    try {
+      await this.client.connect(settings.url, settings.password);
+      clientConnected = true;
+      this.unsubscribeEvents = this.client.onEvent((event) => this.handleEvent(event));
+      this.state = { ...this.state, connected: true };
+      await this.refreshState();
+      this.emitState();
+    } catch (error) {
+      this.unsubscribeEvents?.();
+      this.unsubscribeEvents = undefined;
+      if (clientConnected) {
+        try {
+          await this.client.disconnect();
+        } catch {
+          // Preserve the original connection error for the caller.
+        }
+      }
+      this.state = initialState();
+      this.emitState();
+      throw error;
+    }
   }
 
   async disconnect(): Promise<void> {
@@ -34,6 +51,12 @@ export class ObsAdapter {
     await this.client.disconnect();
     this.state = { ...initialState() };
     this.emitState();
+  }
+
+  async listScenes(): Promise<string[]> {
+    if (!this.state.connected) throw new Error('OBS is not connected');
+    const response = await this.request<{ scenes?: Array<{ sceneName?: unknown }> }>({ requestType: 'GetSceneList' });
+    return [...new Set((response.scenes ?? []).flatMap((scene) => typeof scene.sceneName === 'string' ? [scene.sceneName] : []))];
   }
 
   getState(): ObsRuntimeState {
@@ -103,7 +126,10 @@ export class ObsAdapter {
       this.request<{ currentProgramSceneName?: string }>({ requestType: 'GetCurrentProgramScene' }),
       this.request<{ outputActive?: boolean }>({ requestType: 'GetStreamStatus' }),
       this.request<{ outputActive?: boolean }>({ requestType: 'GetRecordStatus' }),
-      this.request<{ outputActive?: boolean }>({ requestType: 'GetReplayBufferStatus' }),
+      this.request<{ outputActive?: boolean }>({ requestType: 'GetReplayBufferStatus' }).catch((error: unknown) => {
+        if (isReplayBufferUnavailableError(error)) return { outputActive: false };
+        throw error;
+      }),
     ]);
     this.state = {
       ...this.state,
@@ -150,3 +176,10 @@ export class ObsAdapter {
 
 const sceneBoolean = (value: unknown): boolean => value === true;
 const stringValue = (value: unknown): string | undefined => typeof value === 'string' ? value : undefined;
+
+const isReplayBufferUnavailableError = (error: unknown): boolean => {
+  if (typeof error !== 'object' || error === null) return false;
+  const code = 'code' in error ? (error as { code?: unknown }).code : undefined;
+  const message = 'message' in error ? (error as { message?: unknown }).message : undefined;
+  return code === 604 || (typeof message === 'string' && /replay buffer is not available/i.test(message));
+};

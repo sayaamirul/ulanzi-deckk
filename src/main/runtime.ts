@@ -26,6 +26,7 @@ export type RuntimeDevicePort = {
 export type RuntimeObsPort = {
   connect(settings: ObsSettings): Promise<void>;
   disconnect(): Promise<void>;
+  listScenes(): Promise<string[]>;
   getState(): ObsRuntimeState;
   onState(listener: (state: ObsRuntimeState) => void): () => void;
   execute(action: Extract<Action, { type: `obs.${string}` }>): Promise<void>;
@@ -197,8 +198,19 @@ export class Runtime {
   }
 
   async connectObs(settings: ObsSettings): Promise<void> {
-    await this.obs.connect(settings);
-    this.publish();
+    try {
+      await this.obs.connect(settings);
+      this.lastError = undefined;
+      this.publish();
+    } catch (error) {
+      this.lastError = { code: 'obs_connection_failed', message: error instanceof Error ? error.message : String(error) };
+      this.publish();
+      throw error;
+    }
+  }
+
+  async listObsScenes(): Promise<string[]> {
+    return this.obs.listScenes();
   }
 
   async setBrightness(value: number): Promise<void> {

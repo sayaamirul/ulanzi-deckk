@@ -28,6 +28,11 @@ describe('renderer theme styles', () => {
     expect(styles).not.toContain('.profile-toolbar input');
     expect(styles).toContain('.profile-actions-menu .profile-menu');
     expect(styles).toContain('.profile-menu .ui-button:hover');
+    expect(styles).toContain('.ui-button:hover');
+    expect(styles).toContain('.page-group-menu button:hover');
+    expect(styles).toContain('.ui-select-menu button:hover');
+    expect(styles).toContain('transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;');
+    expect(styles).toContain('@media (prefers-reduced-motion: reduce)');
     expect(styles).toContain('justify-content: flex-start;');
     expect(styles).toContain('.ui-input.ui-input--choice');
     expect(styles).not.toContain('#7ee787');

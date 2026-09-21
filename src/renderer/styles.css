@@ -94,6 +94,7 @@ button {
   color: var(--color-text);
   cursor: pointer;
   padding: 7px 10px;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
 }
 
 button:hover,
@@ -180,6 +181,12 @@ button:disabled {
   width: 100%;
 }
 
+.ui-select-menu button:hover:not(:disabled),
+.page-group-menu button:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-raised));
+  color: var(--color-accent-hover);
+}
+
 .ui-select-menu button.is-selected {
   background: var(--color-slot-active);
   color: var(--color-text);
@@ -255,6 +262,25 @@ button:disabled {
   border-color: var(--color-success);
   color: var(--color-bg);
   font-weight: 700;
+}
+
+.ui-button:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-raised));
+  border-color: var(--color-accent);
+  color: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.ui-button--solid.ui-control--accent:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-accent-strong) 88%, var(--color-surface-raised));
+  border-color: var(--color-accent-strong);
+  color: var(--color-accent-contrast);
+}
+
+.ui-button--solid.ui-control--success:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-success) 88%, var(--color-surface-raised));
+  border-color: var(--color-success);
+  color: var(--color-bg);
 }
 
 .ui-button--outline {
@@ -674,6 +700,11 @@ button:disabled {
   padding: 0;
 }
 
+.page-breadcrumbs button:hover:not(:disabled) {
+  color: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
 .page-breadcrumbs span[aria-current="page"] {
   color: var(--color-text-muted);
 }
@@ -736,6 +767,11 @@ button:disabled {
   display: inline-flex;
   justify-content: center;
   padding: 7px;
+}
+
+.icon-button:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-raised));
+  color: var(--color-accent-hover);
 }
 
 .icon-button svg {
@@ -1209,6 +1245,15 @@ h1 {
   position: absolute;
   white-space: nowrap;
   width: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .ui-button,
+  .profile-menu .ui-button,
+  .theme-option {
+    transition: none;
+  }
 }
 
 @media (max-width: 900px) {

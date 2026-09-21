@@ -16,6 +16,8 @@ describe('renderer theme styles', () => {
     expect(styles).toContain('.settings-shell');
     expect(styles).toContain('.theme-option');
     expect(styles).toContain('.workspace-shell {');
+    expect(styles).toContain('.workspace-shell::before');
+    expect(styles).toContain('.workspace-shell::after');
     expect(styles).toContain('height: 100vh;');
     expect(styles).toContain('min-height: 0;');
     expect(styles).toContain('overflow: hidden;');

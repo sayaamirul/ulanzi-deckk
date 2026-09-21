@@ -17,10 +17,11 @@ describe('application config', () => {
 
   it('repairs a missing active profile preference after fallback', async () => {
     const saves: unknown[] = [];
+    const profile = createDefaultProfile();
     await repairActiveProfilePreference(
       { load: async () => ({ theme: 'dark' }), save: async (preferences) => { saves.push(preferences); } },
       { theme: 'dark', activeProfileId: 'missing' },
-      createDefaultProfile(),
+      profile,
     );
 
     expect(saves).toEqual([{ theme: 'dark', activeProfileId: 'stream-control' }]);
